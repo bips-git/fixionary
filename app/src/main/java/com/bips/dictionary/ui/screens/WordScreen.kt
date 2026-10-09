@@ -28,6 +28,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import com.bips.dictionary.ui.components.WordSkeleton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -62,7 +63,7 @@ fun WordScreen(
     onToggleFavourite: (WordEntry) -> Unit,
 ) {
     when (load) {
-        WordLoad.Loading -> DictScreen(title = requested, onBack = onBack) {}
+        WordLoad.Loading -> DictScreen(title = requested, onBack = onBack) { WordSkeleton() }
         WordLoad.NotFound -> DictScreen(title = requested, onBack = onBack) {
             Text(
                 "No entry for “$requested”.",

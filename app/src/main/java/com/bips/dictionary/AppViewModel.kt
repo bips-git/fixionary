@@ -93,6 +93,18 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch(Dispatchers.IO) { user.removeHistory(headword) }
     }
 
+    fun restoreFavourite(hit: SearchHit) {
+        if (isFavourite(hit.headword)) return
+        favourites.add(0, hit)
+        viewModelScope.launch(Dispatchers.IO) { user.addFavourite(hit) }
+    }
+
+    fun restoreHistory(hit: SearchHit) {
+        if (history.any { it.headword == hit.headword }) return
+        history.add(0, hit)
+        viewModelScope.launch(Dispatchers.IO) { user.recordViewed(hit) }
+    }
+
     fun clearHistory() {
         history.clear()
         viewModelScope.launch(Dispatchers.IO) { user.clearHistory() }

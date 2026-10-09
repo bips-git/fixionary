@@ -38,8 +38,9 @@ class DictionaryRepository(private val db: SQLiteDatabase) {
         val hits = cursor.use { c ->
             buildList { while (c.moveToNext()) add(SearchHit(c.getString(0), c.getString(1), c.getString(2))) }
         }
-        // Few prefix matches usually means a typo: add spelling suggestions after them.
-        if (q.length >= FUZZY_MIN_QUERY && hits.size < FUZZY_TRIGGER) hits + fuzzyHits(q, hits) else hits
+        // Few prefix matches usually means a typo: add spelling suggestions after them (single words only,
+        // so a phrase like "fear of" does not pull in unrelated look-alikes).
+        if (q.length >= FUZZY_MIN_QUERY && ' ' !in q && hits.size < FUZZY_TRIGGER) hits + fuzzyHits(q, hits) else hits
     }
 
     // ---- typo tolerance ------------------------------------------------------------------

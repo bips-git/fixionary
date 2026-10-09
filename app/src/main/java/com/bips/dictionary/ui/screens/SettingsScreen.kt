@@ -6,6 +6,7 @@ import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.RecordVoiceOver
 import androidx.compose.material.icons.outlined.Contrast
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Switch
 import androidx.compose.runtime.Composable
@@ -16,7 +17,7 @@ import com.bips.dictionary.ui.components.SectionHeader
 import com.bips.dictionary.ui.theme.Accents
 
 @Composable
-fun SettingsScreen(settings: SettingsState, onBack: () -> Unit) {
+fun SettingsScreen(settings: SettingsState, onBack: () -> Unit, onOpenAbout: () -> Unit) {
     DictScreen(title = "Settings", onBack = onBack) {
         SectionHeader("Theme")
         DictGroup(ThemeMode.entries) { mode ->
@@ -60,6 +61,17 @@ fun SettingsScreen(settings: SettingsState, onBack: () -> Unit) {
                 accent = Accents.Green,
                 onClick = { settings.updateAccent(accent) },
                 trailing = { RadioButton(selected = settings.accent == accent, onClick = null) },
+            )
+        }
+
+        SectionHeader("About")
+        DictGroup(listOf(0)) {
+            DictRow(
+                title = "About & licences",
+                subtitle = "Privacy, data sources and open-source notices",
+                icon = Icons.Outlined.Info,
+                accent = Accents.Teal,
+                onClick = onOpenAbout,
             )
         }
     }

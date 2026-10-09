@@ -134,14 +134,14 @@ fun SearchScreen(repo: DictionaryRepository, onBack: () -> Unit, onOpenWord: (St
                     val exact = shown.filter { !it.fuzzy }
                     val similar = shown.filter { it.fuzzy }
                     itemsIndexed(exact, key = { _, e -> e.headword }) { index, entry ->
-                        ResultRow(entry, index, exact.size, onOpenWord)
+                        ResultRow(entry, index, exact.size, onOpenWord, Modifier.animateItem())
                     }
                     if (similar.isNotEmpty()) {
-                        item(key = "did-you-mean") {
+                        item(key = "did-you-mean", contentType = "header") {
                             SectionHeader(if (exact.isEmpty()) "Did you mean" else "Similar spellings")
                         }
                         itemsIndexed(similar, key = { _, e -> "~" + e.headword }) { index, entry ->
-                            ResultRow(entry, index, similar.size, onOpenWord)
+                            ResultRow(entry, index, similar.size, onOpenWord, Modifier.animateItem())
                         }
                     }
                 }
@@ -151,11 +151,17 @@ fun SearchScreen(repo: DictionaryRepository, onBack: () -> Unit, onOpenWord: (St
 }
 
 @Composable
-private fun ResultRow(entry: SearchHit, index: Int, count: Int, onOpenWord: (String) -> Unit) {
+private fun ResultRow(
+    entry: SearchHit,
+    index: Int,
+    count: Int,
+    onOpenWord: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Surface(
         shape = groupedShape(index, count),
         color = MaterialTheme.colorScheme.surfaceContainer,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
     ) {
         DictRow(
             title = entry.headword,

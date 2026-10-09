@@ -11,6 +11,9 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.foundation.background
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.Modifier
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
@@ -28,10 +31,12 @@ import com.bips.dictionary.data.DictionaryRepository
 import com.bips.dictionary.data.WordEntry
 import com.bips.dictionary.data.WordLoad
 import com.bips.dictionary.speech.rememberSpeaker
+import com.bips.dictionary.ui.screens.AboutScreen
 import com.bips.dictionary.ui.screens.FailedScreen
 import com.bips.dictionary.ui.screens.FavouritesScreen
 import com.bips.dictionary.ui.screens.HistoryScreen
 import com.bips.dictionary.ui.screens.HomeScreen
+import com.bips.dictionary.ui.screens.NoticeScreen
 import com.bips.dictionary.ui.screens.PreparingScreen
 import com.bips.dictionary.ui.screens.SearchScreen
 import com.bips.dictionary.ui.screens.SettingsScreen
@@ -72,6 +77,9 @@ private fun DictionaryNav(
     NavHost(
         navController = nav,
         startDestination = "home",
+        // Paint the page colour behind the screens: while two screens cross-fade, the window's own
+        // (lighter) background would otherwise show through as a flash in dark mode.
+        modifier = Modifier.background(MaterialTheme.colorScheme.background),
         enterTransition = {
             if (animate) fadeIn(tween(220)) + slideInHorizontally(tween(260)) { it / 14 } else EnterTransition.None
         },
@@ -93,7 +101,20 @@ private fun DictionaryNav(
             )
         }
         composable("settings") {
-            SettingsScreen(settings = settings, onBack = { nav.popBackStack() })
+            SettingsScreen(
+                settings = settings,
+                onBack = { nav.popBackStack() },
+                onOpenAbout = { nav.navigate("about") },
+            )
+        }
+        composable("about") {
+            AboutScreen(onBack = { nav.popBackStack() }, onOpenNotice = { nav.navigate("notice/$it") })
+        }
+        composable(
+            route = "notice/{id}",
+            arguments = listOf(navArgument("id") { type = NavType.StringType }),
+        ) { backStack ->
+            NoticeScreen(id = backStack.arguments?.getString("id").orEmpty(), onBack = { nav.popBackStack() })
         }
         composable("favourites") {
             FavouritesScreen(
@@ -101,6 +122,7 @@ private fun DictionaryNav(
                 onBack = { nav.popBackStack() },
                 onOpenWord = nav::openWord,
                 onRemove = vm::removeFavourite,
+                onRestore = vm::restoreFavourite,
             )
         }
         composable("history") {
@@ -109,6 +131,7 @@ private fun DictionaryNav(
                 onBack = { nav.popBackStack() },
                 onOpenWord = nav::openWord,
                 onRemove = vm::removeHistory,
+                onRestore = vm::restoreHistory,
                 onClear = vm::clearHistory,
             )
         }

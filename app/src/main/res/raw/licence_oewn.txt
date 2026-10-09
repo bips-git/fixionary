@@ -1,0 +1,9 @@
+Open English WordNet
+https://en-word.net/
+
+The headwords, definitions, example sentences, synonyms, antonyms and broader/narrower terms in this app come from Open English WordNet (OEWN), made by the Open English WordNet contributors and released under the Creative Commons Attribution 4.0 International licence (CC BY 4.0):
+https://creativecommons.org/licenses/by/4.0/
+
+Changes made: the data was converted into a compact SQLite database, filtered, indexed and ordered by word frequency for offline use. No endorsement by the OEWN contributors is implied.
+
+Open English WordNet is itself derived from Princeton WordNet 3.0, whose licence is reproduced under "Princeton WordNet licence".

@@ -1,0 +1,7 @@
+wordfreq
+https://github.com/rspeer/wordfreq
+
+Word-frequency data from the wordfreq project (Robyn Speer and contributors) is used only to rank search results so that common words appear first. The data is released under the Creative Commons Attribution-ShareAlike 4.0 International licence (CC BY-SA 4.0):
+https://creativecommons.org/licenses/by-sa/4.0/
+
+Changes made: only a derived frequency rank number per headword is stored. No wordfreq text or word lists are shown to you.

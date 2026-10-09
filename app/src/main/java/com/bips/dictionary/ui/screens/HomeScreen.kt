@@ -12,6 +12,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import com.bips.dictionary.ui.components.SkeletonBlock
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -45,7 +46,11 @@ fun HomeScreen(
     ) {
         SearchPill(onClick = onSearch)
         Spacer(Modifier.height(16.dp))
-        wordOfTheDay?.let { WordOfTheDayCard(it, onClick = { onOpenWord(it.headword) }) }
+        if (wordOfTheDay != null) {
+            WordOfTheDayCard(wordOfTheDay, onClick = { onOpenWord(wordOfTheDay.headword) })
+        } else {
+            SkeletonBlock(148.dp, shape = MaterialTheme.shapes.extraLarge)
+        }
 
         SectionHeader("Library")
         DictGroup(listOf(0, 1)) { i ->

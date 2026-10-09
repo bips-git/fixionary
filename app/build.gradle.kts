@@ -35,6 +35,12 @@ android {
     buildFeatures {
         compose = true
     }
+
+    // F-Droid and reproducible builds: no signed dependency-metadata blob inside the APK.
+    dependenciesInfo {
+        includeInApk = false
+        includeInBundle = false
+    }
 }
 
 dependencies {

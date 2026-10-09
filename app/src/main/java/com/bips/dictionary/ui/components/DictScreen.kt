@@ -77,6 +77,7 @@ fun DictLazyScreen(
     title: String,
     onBack: (() -> Unit)? = null,
     actions: @Composable RowScope.() -> Unit = {},
+    snackbarHost: @Composable () -> Unit = {},
     content: LazyListScope.() -> Unit,
 ) {
     val bg = MaterialTheme.colorScheme.background
@@ -84,6 +85,7 @@ fun DictLazyScreen(
     Scaffold(
         modifier = Modifier.nestedScroll(behavior.nestedScrollConnection),
         containerColor = bg,
+        snackbarHost = snackbarHost,
         topBar = {
             LargeTopAppBar(
                 title = { Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
