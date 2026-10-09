@@ -116,6 +116,41 @@ class DictionaryRepository(private val db: SQLiteDatabase) {
         return prev[m]
     }
 
+    // ---- search by meaning ---------------------------------------------------------------
+
+    /** True when dictionary.db carries the definition index (added by pipeline/add_meaning_index.py). */
+    val hasMeaningIndex: Boolean = db.rawQuery(
+        "SELECT 1 FROM sqlite_master WHERE name = 'synset_fts'", null,
+    ).use { it.moveToFirst() }
+
+    /**
+     * Finds words by what their definition says ("fear of heights" finds acrophobia). Every
+     * meaningful word must appear in the definition; the last one may be a partial word.
+     * Shorter definitions rank first (they are usually the more precise match), then commoner words.
+     */
+    suspend fun searchMeaning(raw: String, limit: Int = 30): List<SearchHit> = withContext(Dispatchers.IO) {
+        if (!hasMeaningIndex) return@withContext emptyList()
+        val tokens = fold(raw).split(Regex("[^a-z0-9]+")).filter { it.isNotEmpty() }
+        val terms = tokens.filter { it !in STOP_WORDS }.ifEmpty { tokens }.take(6)
+        if (terms.isEmpty()) return@withContext emptyList()
+        val match = terms.mapIndexed { i, t -> if (i == terms.lastIndex) "$t*" else t }.joinToString(" ")
+
+        val seen = HashSet<String>()
+        val out = ArrayList<SearchHit>()
+        db.rawQuery(
+            "SELECT w.headword, y.pos, y.definition FROM synset_fts " +
+                "JOIN synsets y ON y.id = synset_fts.rowid " +
+                "JOIN senses s ON s.synset_id = y.id JOIN words w ON w.id = s.word_id " +
+                "WHERE synset_fts MATCH ? ORDER BY length(y.definition), w.freq_rank LIMIT ${limit * 4}",
+            arrayOf(match),
+        ).use { c ->
+            while (c.moveToNext() && out.size < limit) {
+                if (seen.add(c.getString(0))) out.add(SearchHit(c.getString(0), c.getString(1), c.getString(2)))
+            }
+        }
+        out
+    }
+
     /** Full entry for a headword. Prefers the exact-case form ("book" before "Book"). */
     suspend fun entry(raw: String): WordEntry? = withContext(Dispatchers.IO) {
         val found = db.rawQuery(
@@ -185,6 +220,10 @@ class DictionaryRepository(private val db: SQLiteDatabase) {
     private fun Cursor.getStringOrNull(i: Int): String? = if (isNull(i)) null else getString(i)
 
     private companion object {
+        val STOP_WORDS = setOf(
+            "a", "an", "the", "of", "to", "in", "on", "for", "and", "or", "is", "are", "that",
+            "with", "by", "at", "as", "it", "be", "who", "which", "what", "something", "someone",
+        )
         const val FUZZY_WORDS = 80_000
         const val FUZZY_MIN_QUERY = 3
         const val FUZZY_TRIGGER = 8

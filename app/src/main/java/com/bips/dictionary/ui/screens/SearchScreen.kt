@@ -17,6 +17,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -50,7 +51,10 @@ fun SearchScreen(repo: DictionaryRepository, onBack: () -> Unit, onOpenWord: (St
     var query by rememberSaveable { mutableStateOf("") }
     // LaunchedEffect cancels the previous lookup when the query changes, so only the latest one lands.
     var results by remember { mutableStateOf<List<SearchHit>?>(null) }
-    LaunchedEffect(query) { results = repo.search(query) }
+    var byMeaning by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(query, byMeaning) {
+        results = if (byMeaning) repo.searchMeaning(query) else repo.search(query)
+    }
     val focus = remember { FocusRequester() }
     LaunchedEffect(Unit) { focus.requestFocus() }
 
@@ -68,7 +72,7 @@ fun SearchScreen(repo: DictionaryRepository, onBack: () -> Unit, onOpenWord: (St
                     onValueChange = { query = it },
                     modifier = Modifier.weight(1f).focusRequester(focus),
                     singleLine = true,
-                    placeholder = { Text("Search words") },
+                    placeholder = { Text(if (byMeaning) "Describe the word" else "Search words") },
                     leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
                     trailingIcon = {
                         if (query.isNotEmpty()) {
@@ -98,12 +102,26 @@ fun SearchScreen(repo: DictionaryRepository, onBack: () -> Unit, onOpenWord: (St
                 )
             }
 
+            if (repo.hasMeaningIndex) {
+                Row(
+                    Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    FilterChip(selected = !byMeaning, onClick = { byMeaning = false }, label = { Text("Words") })
+                    FilterChip(selected = byMeaning, onClick = { byMeaning = true }, label = { Text("Meanings") })
+                }
+            }
+
             val shown = results
             if (shown == null) {
                 // first lookup still running
             } else if (shown.isEmpty()) {
                 Text(
-                    "No matches for “${query.trim()}”. Check the spelling.",
+                    when {
+                        byMeaning && query.isBlank() -> "Describe what you are looking for, for example “fear of heights”."
+                        byMeaning -> "No definitions match “${query.trim()}”. Try fewer or different words."
+                        else -> "No matches for “${query.trim()}”. Check the spelling."
+                    },
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 32.dp, vertical = 24.dp),
