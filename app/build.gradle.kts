@@ -17,7 +17,12 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            // Compose is several times slower in a debug build, so judge scrolling and animation on this one.
+            // Signed with the debug key so it installs over your debug build and keeps your favourites.
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
 

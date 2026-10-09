@@ -14,6 +14,20 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material3.Surface
+import androidx.compose.foundation.layout.fillMaxWidth
+import com.bips.dictionary.ui.components.DictLazyScreen
+import com.bips.dictionary.ui.components.groupedShape
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.runtime.remember
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -75,7 +89,7 @@ private fun WordContent(
     LaunchedEffect(entry.headword) { onViewed(entry) }
 
 
-    DictScreen(
+    DictLazyScreen(
         title = entry.headword,
         onBack = onBack,
         actions = {
@@ -88,39 +102,64 @@ private fun WordContent(
                     )
                 }
             }
-            IconButton(onClick = { onToggleFavourite(entry) }) {
+            val haptic = LocalHapticFeedback.current
+            val starScale = remember { Animatable(1f) }
+            var firstFrame by remember { mutableStateOf(true) }
+            LaunchedEffect(favourite) {
+                // Skip the first pass so opening an already-starred word does not bounce.
+                if (firstFrame) { firstFrame = false; return@LaunchedEffect }
+                starScale.snapTo(0.6f)
+                starScale.animateTo(1f, spring(dampingRatio = 0.35f, stiffness = Spring.StiffnessMedium))
+            }
+            val starTint by animateColorAsState(
+                if (favourite) Accents.Amber else MaterialTheme.colorScheme.onSurfaceVariant,
+                label = "starTint",
+            )
+            IconButton(onClick = {
+                haptic.performHapticFeedback(if (favourite) HapticFeedbackType.ToggleOff else HapticFeedbackType.ToggleOn)
+                onToggleFavourite(entry)
+            }) {
                 Icon(
                     if (favourite) Icons.Filled.Star else Icons.Outlined.StarBorder,
                     contentDescription = if (favourite) "Remove from favourites" else "Add to favourites",
-                    tint = if (favourite) Accents.Amber else MaterialTheme.colorScheme.onSurfaceVariant,
+                    tint = starTint,
+                    modifier = Modifier.graphicsLayer { scaleX = starScale.value; scaleY = starScale.value },
                 )
             }
         },
     ) {
-        Row(Modifier.padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                entry.senses.map { it.pos }.distinct().joinToString(" · "),
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.primary,
-            )
-            entry.ipa?.let {
-                Spacer(Modifier.width(8.dp))
-                Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        item {
+            Row(Modifier.padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    entry.senses.map { it.pos }.distinct().joinToString(" · "),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                entry.ipa?.let {
+                    Spacer(Modifier.width(8.dp))
+                    Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
         }
 
         // One group per part of speech, senses numbered within it.
         entry.senses.groupBy { it.pos }.forEach { (pos, senses) ->
-            SectionHeader(pos.replaceFirstChar { it.uppercase() })
-            DictGroup(senses.withIndex().toList()) { (i, sense) ->
-                ListItem(
-                    leadingContent = {
-                        Text("${i + 1}", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
-                    },
-                    headlineContent = { Text(sense.definition, style = MaterialTheme.typography.bodyLarge) },
-                    supportingContent = sense.example?.let { ex -> { Text("“$ex”", fontStyle = FontStyle.Italic) } },
-                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                )
+            item(key = "pos-$pos") { SectionHeader(pos.replaceFirstChar { it.uppercase() }) }
+            itemsIndexed(senses, key = { i, _ -> "$pos-$i" }) { i, sense ->
+                Surface(
+                    shape = groupedShape(i, senses.size),
+                    color = MaterialTheme.colorScheme.surfaceContainer,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    ListItem(
+                        leadingContent = {
+                            Text("${i + 1}", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                        },
+                        headlineContent = { Text(sense.definition, style = MaterialTheme.typography.bodyLarge) },
+                        supportingContent = sense.example?.let { ex -> { Text("“$ex”", fontStyle = FontStyle.Italic) } },
+                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                    )
+                }
             }
         }
 
@@ -132,9 +171,8 @@ private fun WordContent(
     }
 }
 
-@Composable
-private fun chipSection(title: String, words: List<String>, accent: Color, onOpenWord: (String) -> Unit) {
+private fun LazyListScope.chipSection(title: String, words: List<String>, accent: Color, onOpenWord: (String) -> Unit) {
     if (words.isEmpty()) return
-    SectionHeader(title)
-    WordChips(words.take(MAX_CHIPS), accent, onOpenWord)
+    item(key = "hdr-$title") { SectionHeader(title) }
+    item(key = "chips-$title") { WordChips(words.take(MAX_CHIPS), accent, onOpenWord) }
 }

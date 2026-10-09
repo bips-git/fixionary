@@ -3,6 +3,14 @@ package com.bips.dictionary
 import android.net.Uri
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
+import android.provider.Settings
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
@@ -56,14 +64,22 @@ private fun DictionaryNav(
         value = repo.wordOfTheDay(LocalDate.now().toEpochDay())
     }
 
-    // No custom motion in the basic version: transitions are switched off.
+    // Short, quiet transitions. Skipped entirely when the phone's animation scale is off.
+    val context = LocalContext.current
+    val animate = remember {
+        Settings.Global.getFloat(context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) != 0f
+    }
     NavHost(
         navController = nav,
         startDestination = "home",
-        enterTransition = { EnterTransition.None },
-        exitTransition = { ExitTransition.None },
-        popEnterTransition = { EnterTransition.None },
-        popExitTransition = { ExitTransition.None },
+        enterTransition = {
+            if (animate) fadeIn(tween(220)) + slideInHorizontally(tween(260)) { it / 14 } else EnterTransition.None
+        },
+        exitTransition = { if (animate) fadeOut(tween(120)) else ExitTransition.None },
+        popEnterTransition = { if (animate) fadeIn(tween(200)) else EnterTransition.None },
+        popExitTransition = {
+            if (animate) fadeOut(tween(160)) + slideOutHorizontally(tween(220)) { it / 14 } else ExitTransition.None
+        },
     ) {
         composable("home") {
             HomeScreen(

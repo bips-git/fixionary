@@ -12,6 +12,12 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material3.Surface
+import androidx.compose.foundation.layout.fillMaxWidth
+import com.bips.dictionary.ui.components.DictLazyScreen
+import com.bips.dictionary.ui.components.groupedShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -32,9 +38,9 @@ fun FavouritesScreen(
     onOpenWord: (String) -> Unit,
     onRemove: (String) -> Unit,
 ) {
-    DictScreen(title = "Favourites", onBack = onBack) {
-        if (items.isEmpty()) EmptyNote("Tap the star on a word to save it here.")
-        else SavedWords(items, favourites = true, onOpenWord = onOpenWord, onRemove = onRemove)
+    DictLazyScreen(title = "Favourites", onBack = onBack) {
+        if (items.isEmpty()) item { EmptyNote("Tap the star on a word to save it here.") }
+        else savedWords(items, favourites = true, onOpenWord = onOpenWord, onRemove = onRemove)
     }
 }
 
@@ -48,7 +54,7 @@ fun HistoryScreen(
 ) {
     var confirmClear by rememberSaveable { mutableStateOf(false) }
 
-    DictScreen(
+    DictLazyScreen(
         title = "History",
         onBack = onBack,
         actions = {
@@ -59,8 +65,8 @@ fun HistoryScreen(
             }
         },
     ) {
-        if (items.isEmpty()) EmptyNote("Words you look up will appear here.")
-        else SavedWords(items, favourites = false, onOpenWord = onOpenWord, onRemove = onRemove)
+        if (items.isEmpty()) item { EmptyNote("Words you look up will appear here.") }
+        else savedWords(items, favourites = false, onOpenWord = onOpenWord, onRemove = onRemove)
     }
 
     if (confirmClear) {
@@ -74,31 +80,37 @@ fun HistoryScreen(
     }
 }
 
-@Composable
-private fun SavedWords(
+private fun LazyListScope.savedWords(
     items: List<SearchHit>,
     favourites: Boolean,
     onOpenWord: (String) -> Unit,
     onRemove: (String) -> Unit,
 ) {
     val label = if (favourites) "Remove from favourites" else "Remove from history"
-    DictGroup(items) { hit ->
-        DictRow(
-            title = hit.headword,
-            subtitle = "${hit.pos} · ${hit.definition}",
-            icon = if (favourites) Icons.Outlined.StarBorder else Icons.Outlined.History,
-            accent = if (favourites) Accents.Rose else Accents.Teal,
-            onClick = { onOpenWord(hit.headword) },
-            trailing = {
-                IconButton(onClick = { onRemove(hit.headword) }) {
-                    Icon(
-                        Icons.Outlined.Close,
-                        contentDescription = "$label: ${hit.headword}",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            },
-        )
+    itemsIndexed(items, key = { _, hit -> hit.headword }) { index, hit ->
+        Surface(
+            shape = groupedShape(index, items.size),
+            color = MaterialTheme.colorScheme.surfaceContainer,
+            // Rows slide into place when one is removed.
+            modifier = Modifier.fillMaxWidth().animateItem(),
+        ) {
+            DictRow(
+                title = hit.headword,
+                subtitle = "${hit.pos} · ${hit.definition}",
+                icon = if (favourites) Icons.Outlined.StarBorder else Icons.Outlined.History,
+                accent = if (favourites) Accents.Rose else Accents.Teal,
+                onClick = { onOpenWord(hit.headword) },
+                trailing = {
+                    IconButton(onClick = { onRemove(hit.headword) }) {
+                        Icon(
+                            Icons.Outlined.Close,
+                            contentDescription = "$label: ${hit.headword}",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                },
+            )
+        }
     }
 }
 
