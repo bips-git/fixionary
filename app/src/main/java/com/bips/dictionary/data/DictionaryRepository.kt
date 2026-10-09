@@ -3,6 +3,8 @@ package com.bips.dictionary.data
 import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 
 /**
@@ -33,7 +35,85 @@ class DictionaryRepository(private val db: SQLiteDatabase) {
                 arrayOf(q, q + "\uffff", q),
             )
         }
-        cursor.use { c -> buildList { while (c.moveToNext()) add(SearchHit(c.getString(0), c.getString(1), c.getString(2))) } }
+        val hits = cursor.use { c ->
+            buildList { while (c.moveToNext()) add(SearchHit(c.getString(0), c.getString(1), c.getString(2))) }
+        }
+        // Few prefix matches usually means a typo: add spelling suggestions after them.
+        if (q.length >= FUZZY_MIN_QUERY && hits.size < FUZZY_TRIGGER) hits + fuzzyHits(q, hits) else hits
+    }
+
+    // ---- typo tolerance ------------------------------------------------------------------
+
+    private class FuzzyIndex(val ids: IntArray, val words: Array<String>)
+
+    @Volatile
+    private var fuzzyIndex: FuzzyIndex? = null
+
+    /** The most common FUZZY_WORDS headwords (folded) held in memory, loaded on first need. */
+    private fun fuzzyIndex(): FuzzyIndex = fuzzyIndex ?: run {
+        val ids = ArrayList<Int>()
+        val words = ArrayList<String>()
+        db.rawQuery(
+            "SELECT id, headword_lc FROM words WHERE id <= $FUZZY_WORDS ORDER BY id", null,
+        ).use { c -> while (c.moveToNext()) { ids.add(c.getInt(0)); words.add(c.getString(1)) } }
+        FuzzyIndex(ids.toIntArray(), words.toTypedArray()).also { fuzzyIndex = it }
+    }
+
+    /** Words within 1 (short query) or 2 (longer) edits of [q], closest and most common first. */
+    private fun CoroutineScope.fuzzyHits(q: String, already: List<SearchHit>): List<SearchHit> {
+        val index = fuzzyIndex()
+        val maxEdits = if (q.length <= 4) 1 else 2
+        val seen = already.mapTo(HashSet()) { it.headword }
+        val found = ArrayList<Long>() // distance * 2^32 + id, so a plain sort orders by both
+        val a = IntArray(MAX_WORD + 1)
+        val b = IntArray(MAX_WORD + 1)
+        val c = IntArray(MAX_WORD + 1)
+        for (i in index.words.indices) {
+            if (i and 4095 == 0) ensureActive()
+            val w = index.words[i]
+            if (w.length > MAX_WORD || kotlin.math.abs(w.length - q.length) > maxEdits) continue
+            if (w.startsWith(q)) continue // already covered by the prefix search
+            val d = editDistance(q, w, maxEdits, a, b, c)
+            if (d <= maxEdits) found.add((d.toLong() shl 32) or index.ids[i].toLong())
+        }
+        found.sort()
+        val out = ArrayList<SearchHit>()
+        for (key in found) {
+            if (out.size >= MAX_FUZZY) break
+            val id = (key and 0xFFFFFFFFL).toString()
+            db.rawQuery("$hitColumns WHERE w.id = ?", arrayOf(id)).use { cur ->
+                if (cur.moveToFirst() && cur.getString(0) !in seen) {
+                    out.add(SearchHit(cur.getString(0), cur.getString(1), cur.getString(2), fuzzy = true))
+                }
+            }
+        }
+        return out
+    }
+
+    /**
+     * Damerau-Levenshtein (optimal string alignment): insert, delete, substitute, swap neighbours.
+     * Gives up as soon as a whole row exceeds [max]. The three arrays are reusable scratch space.
+     */
+    private fun editDistance(s: String, t: String, max: Int, p2: IntArray, p1: IntArray, cur: IntArray): Int {
+        var prev2 = p2
+        var prev = p1
+        var row = cur
+        val m = t.length
+        for (j in 0..m) prev[j] = j
+        for (i in 1..s.length) {
+            row[0] = i
+            var rowMin = i
+            for (j in 1..m) {
+                val cost = if (s[i - 1] == t[j - 1]) 0 else 1
+                var v = minOf(prev[j] + 1, row[j - 1] + 1, prev[j - 1] + cost)
+                if (i > 1 && j > 1 && s[i - 1] == t[j - 2] && s[i - 2] == t[j - 1]) v = minOf(v, prev2[j - 2] + 1)
+                row[j] = v
+                if (v < rowMin) rowMin = v
+            }
+            if (rowMin > max) return max + 1
+            val tmp = prev2; prev2 = prev; prev = row; row = tmp
+        }
+        return prev[m]
     }
 
     /** Full entry for a headword. Prefers the exact-case form ("book" before "Book"). */
@@ -105,6 +185,11 @@ class DictionaryRepository(private val db: SQLiteDatabase) {
     private fun Cursor.getStringOrNull(i: Int): String? = if (isNull(i)) null else getString(i)
 
     private companion object {
+        const val FUZZY_WORDS = 80_000
+        const val FUZZY_MIN_QUERY = 3
+        const val FUZZY_TRIGGER = 8
+        const val MAX_FUZZY = 10
+        const val MAX_WORD = 40
         const val MAX_NARROWER = 30
         const val MAX_RELATED = 20
     }

@@ -1,7 +1,13 @@
 package com.bips.dictionary.data
 
 /** One row in a result list: the headword with its first sense. */
-data class SearchHit(val headword: String, val pos: String, val definition: String)
+data class SearchHit(
+    val headword: String,
+    val pos: String,
+    val definition: String,
+    /** True for a spelling suggestion (typo tolerance) rather than a prefix match. */
+    val fuzzy: Boolean = false,
+)
 
 data class Sense(val pos: String, val definition: String, val example: String?)
 

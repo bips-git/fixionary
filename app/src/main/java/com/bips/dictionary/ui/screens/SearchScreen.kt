@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import com.bips.dictionary.ui.components.SectionHeader
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -112,21 +113,36 @@ fun SearchScreen(repo: DictionaryRepository, onBack: () -> Unit, onOpenWord: (St
                     contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 24.dp),
                     verticalArrangement = Arrangement.spacedBy(2.dp),
                 ) {
-                    itemsIndexed(shown, key = { _, e -> e.headword }) { index, entry ->
-                        Surface(
-                            shape = groupedShape(index, shown.size),
-                            color = MaterialTheme.colorScheme.surfaceContainer,
-                            modifier = Modifier.fillMaxWidth(),
-                        ) {
-                            DictRow(
-                                title = entry.headword,
-                                subtitle = "${entry.pos} · ${entry.definition}",
-                                onClick = { onOpenWord(entry.headword) },
-                            )
+                    val exact = shown.filter { !it.fuzzy }
+                    val similar = shown.filter { it.fuzzy }
+                    itemsIndexed(exact, key = { _, e -> e.headword }) { index, entry ->
+                        ResultRow(entry, index, exact.size, onOpenWord)
+                    }
+                    if (similar.isNotEmpty()) {
+                        item(key = "did-you-mean") {
+                            SectionHeader(if (exact.isEmpty()) "Did you mean" else "Similar spellings")
+                        }
+                        itemsIndexed(similar, key = { _, e -> "~" + e.headword }) { index, entry ->
+                            ResultRow(entry, index, similar.size, onOpenWord)
                         }
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun ResultRow(entry: SearchHit, index: Int, count: Int, onOpenWord: (String) -> Unit) {
+    Surface(
+        shape = groupedShape(index, count),
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        DictRow(
+            title = entry.headword,
+            subtitle = "${entry.pos} · ${entry.definition}",
+            onClick = { onOpenWord(entry.headword) },
+        )
     }
 }
