@@ -39,14 +39,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
-import com.bips.dictionary.data.SampleData
+import com.bips.dictionary.data.DictionaryRepository
+import com.bips.dictionary.data.SearchHit
 import com.bips.dictionary.ui.components.DictRow
 import com.bips.dictionary.ui.components.groupedShape
 
 @Composable
-fun SearchScreen(onBack: () -> Unit, onOpenWord: (String) -> Unit) {
+fun SearchScreen(repo: DictionaryRepository, onBack: () -> Unit, onOpenWord: (String) -> Unit) {
     var query by rememberSaveable { mutableStateOf("") }
-    val results = remember(query) { SampleData.search(query) }
+    // LaunchedEffect cancels the previous lookup when the query changes, so only the latest one lands.
+    var results by remember { mutableStateOf<List<SearchHit>?>(null) }
+    LaunchedEffect(query) { results = repo.search(query) }
     val focus = remember { FocusRequester() }
     LaunchedEffect(Unit) { focus.requestFocus() }
 
@@ -89,12 +92,15 @@ fun SearchScreen(onBack: () -> Unit, onOpenWord: (String) -> Unit) {
                     ),
                     // Enter (soft or hardware keyboard) opens the top hit.
                     keyboardActions = KeyboardActions(onSearch = {
-                        results.firstOrNull()?.let { onOpenWord(it.headword) }
+                        results?.firstOrNull()?.let { onOpenWord(it.headword) }
                     }),
                 )
             }
 
-            if (results.isEmpty()) {
+            val shown = results
+            if (shown == null) {
+                // first lookup still running
+            } else if (shown.isEmpty()) {
                 Text(
                     "No matches for “${query.trim()}”. Check the spelling.",
                     style = MaterialTheme.typography.bodyMedium,
@@ -106,9 +112,9 @@ fun SearchScreen(onBack: () -> Unit, onOpenWord: (String) -> Unit) {
                     contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 24.dp),
                     verticalArrangement = Arrangement.spacedBy(2.dp),
                 ) {
-                    itemsIndexed(results, key = { _, e -> e.headword }) { index, entry ->
+                    itemsIndexed(shown, key = { _, e -> e.headword }) { index, entry ->
                         Surface(
-                            shape = groupedShape(index, results.size),
+                            shape = groupedShape(index, shown.size),
                             color = MaterialTheme.colorScheme.surfaceContainer,
                             modifier = Modifier.fillMaxWidth(),
                         ) {

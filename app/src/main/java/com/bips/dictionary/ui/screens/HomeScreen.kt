@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.History
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -13,7 +15,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.bips.dictionary.data.Entry
+import com.bips.dictionary.data.SearchHit
+import com.bips.dictionary.data.WordEntry
 import com.bips.dictionary.ui.components.DictGroup
 import com.bips.dictionary.ui.components.DictRow
 import com.bips.dictionary.ui.components.DictScreen
@@ -24,25 +27,36 @@ import com.bips.dictionary.ui.theme.Accents
 
 @Composable
 fun HomeScreen(
-    wordOfTheDay: Entry,
-    recents: List<Entry>,
-    themeMode: ThemeMode,
-    onCycleTheme: () -> Unit,
+    wordOfTheDay: WordEntry?,
+    recents: List<SearchHit>,
+    onOpenSettings: () -> Unit,
     onSearch: () -> Unit,
     onOpenWord: (String) -> Unit,
+    onOpenFavourites: () -> Unit,
+    onOpenHistory: () -> Unit,
 ) {
     DictScreen(
         title = "Fixionary",
         actions = {
-            // Dev toggle until Settings exists (Phase 6).
-            IconButton(onClick = onCycleTheme) {
-                Icon(Icons.Outlined.DarkMode, contentDescription = "Theme: ${themeMode.label}. Tap to change")
+            IconButton(onClick = onOpenSettings) {
+                Icon(Icons.Outlined.Settings, contentDescription = "Settings")
             }
         },
     ) {
         SearchPill(onClick = onSearch)
         Spacer(Modifier.height(16.dp))
-        WordOfTheDayCard(wordOfTheDay, onClick = { onOpenWord(wordOfTheDay.headword) })
+        wordOfTheDay?.let { WordOfTheDayCard(it, onClick = { onOpenWord(it.headword) }) }
+
+        SectionHeader("Library")
+        DictGroup(listOf(0, 1)) { i ->
+            if (i == 0) DictRow(
+                title = "Favourites", subtitle = "Words you starred",
+                icon = Icons.Outlined.StarBorder, accent = Accents.Rose, onClick = onOpenFavourites,
+            ) else DictRow(
+                title = "History", subtitle = "Everything you looked up",
+                icon = Icons.Outlined.History, accent = Accents.Teal, onClick = onOpenHistory,
+            )
+        }
 
         SectionHeader("Recent")
         if (recents.isEmpty()) {

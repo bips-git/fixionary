@@ -10,6 +10,8 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import com.bips.dictionary.ui.screens.SettingsState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import com.bips.dictionary.ui.screens.ThemeMode
@@ -19,11 +21,11 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            var mode by rememberSaveable { mutableStateOf(ThemeMode.System) }
-            val dark = when (mode) {
+            val settings = remember { SettingsState(applicationContext) }
+            val dark = when (settings.themeMode) {
                 ThemeMode.System -> isSystemInDarkTheme()
                 ThemeMode.Light -> false
-                ThemeMode.Dark, ThemeMode.Amoled -> true
+                ThemeMode.Dark -> true
             }
 
             // Keep status/navigation bar icon colours in step with the in-app theme, not just the system's.
@@ -35,8 +37,8 @@ class MainActivity : ComponentActivity() {
                 onDispose { }
             }
 
-            DictionaryTheme(darkTheme = dark, amoled = mode == ThemeMode.Amoled) {
-                DictionaryApp(themeMode = mode, onCycleTheme = { mode = mode.next() })
+            DictionaryTheme(darkTheme = dark, amoled = settings.amoled, dynamicColor = settings.dynamicColor) {
+                DictionaryApp(settings = settings)
             }
         }
     }

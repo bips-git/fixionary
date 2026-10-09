@@ -48,7 +48,7 @@ fun DictScreen(
                 },
                 actions = actions,
                 scrollBehavior = behavior,
-                colors = TopAppBarDefaults.largeTopAppBarColors(containerColor = bg, scrolledContainerColor = bg),
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = bg, scrolledContainerColor = bg),
             )
         },
     ) { padding ->

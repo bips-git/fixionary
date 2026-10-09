@@ -26,7 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.bips.dictionary.data.Entry
+import com.bips.dictionary.data.WordEntry
 
 @Composable
 fun SearchPill(onClick: () -> Unit, modifier: Modifier = Modifier) {
@@ -57,7 +57,7 @@ fun SearchPill(onClick: () -> Unit, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun WordOfTheDayCard(entry: Entry, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun WordOfTheDayCard(entry: WordEntry, onClick: () -> Unit, modifier: Modifier = Modifier) {
     Surface(
         onClick = onClick,
         shape = MaterialTheme.shapes.extraLarge,
@@ -65,6 +65,7 @@ fun WordOfTheDayCard(entry: Entry, onClick: () -> Unit, modifier: Modifier = Mod
         contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
         modifier = modifier.fillMaxWidth(),
     ) {
+        val first = entry.senses.first()
         Column(Modifier.padding(20.dp)) {
             Text("Word of the day", style = MaterialTheme.typography.labelMedium, modifier = Modifier.alpha(0.8f))
             Spacer(Modifier.height(4.dp))
@@ -72,15 +73,17 @@ fun WordOfTheDayCard(entry: Entry, onClick: () -> Unit, modifier: Modifier = Mod
             Spacer(Modifier.height(4.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    entry.pos,
+                    first.pos,
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.primary,
                 )
-                Spacer(Modifier.width(8.dp))
-                Text(entry.ipa, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.alpha(0.8f))
+                entry.ipa?.let {
+                    Spacer(Modifier.width(8.dp))
+                    Text(it, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.alpha(0.8f))
+                }
             }
             Spacer(Modifier.height(8.dp))
-            Text(entry.definition, style = MaterialTheme.typography.bodyLarge)
+            Text(first.definition, style = MaterialTheme.typography.bodyLarge)
         }
     }
 }

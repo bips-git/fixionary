@@ -40,5 +40,22 @@ dependencies {
     implementation(libs.compose.material.icons.extended)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
     debugImplementation(libs.compose.ui.tooling)
 }
+
+// dictionary.db (about 76 MB) is built by pipeline/ and kept out of git. Before every build it is copied
+// into src/main/assets (also git-ignored). Default: <project>/dict-data/build/dictionary.db;
+// override with  ./gradlew assembleDebug -PdictionaryDb=/path/to/dictionary.db
+val dictionaryDbFile: Provider<File> = providers.gradleProperty("dictionaryDb")
+    .map { File(it) }
+    .orElse(rootProject.layout.projectDirectory.file("dict-data/build/dictionary.db").asFile)
+
+val copyDictionaryDb by tasks.registering(Copy::class) {
+    from(dictionaryDbFile)
+    into(layout.projectDirectory.dir("src/main/assets"))
+    rename { "dictionary.db" }
+    inputs.file(dictionaryDbFile) // missing database fails the build with a clear message
+}
+tasks.named("preBuild") { dependsOn(copyDictionaryDb) }

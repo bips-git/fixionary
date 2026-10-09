@@ -4,31 +4,56 @@ import android.net.Uri
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.bips.dictionary.data.SampleData
+import com.bips.dictionary.data.DictionaryRepository
+import com.bips.dictionary.data.WordEntry
+import com.bips.dictionary.data.WordLoad
+import com.bips.dictionary.speech.rememberSpeaker
+import com.bips.dictionary.ui.screens.FailedScreen
+import com.bips.dictionary.ui.screens.FavouritesScreen
+import com.bips.dictionary.ui.screens.HistoryScreen
 import com.bips.dictionary.ui.screens.HomeScreen
+import com.bips.dictionary.ui.screens.PreparingScreen
 import com.bips.dictionary.ui.screens.SearchScreen
-import com.bips.dictionary.ui.screens.ThemeMode
+import com.bips.dictionary.ui.screens.SettingsScreen
+import com.bips.dictionary.ui.screens.SettingsState
 import com.bips.dictionary.ui.screens.WordScreen
+import java.time.LocalDate
 
 @Composable
-fun DictionaryApp(themeMode: ThemeMode, onCycleTheme: () -> Unit) {
-    val nav = rememberNavController()
-    val recents = remember { mutableStateListOf<String>().apply { addAll(SampleData.initialRecents) } }
+fun DictionaryApp(settings: SettingsState, vm: AppViewModel = viewModel()) {
+    val state by vm.dbState.collectAsStateWithLifecycle()
+    when (val s = state) {
+        DbState.Preparing -> PreparingScreen()
+        is DbState.Failed -> FailedScreen(s.message, onRetry = vm::load)
+        is DbState.Ready -> DictionaryNav(s.repo, vm, settings)
+    }
+}
 
-    fun openWord(word: String) {
-        SampleData.find(word)?.let { found ->
-            recents.remove(found.headword)
-            recents.add(0, found.headword)
-            while (recents.size > 10) recents.removeAt(recents.lastIndex)
-        }
-        nav.navigate("word/${Uri.encode(word)}")
+private fun NavHostController.openWord(word: String) = navigate("word/${Uri.encode(word)}")
+
+@Composable
+private fun DictionaryNav(
+    repo: DictionaryRepository,
+    vm: AppViewModel,
+    settings: SettingsState,
+) {
+    val nav = rememberNavController()
+    val speaker = rememberSpeaker()
+    LaunchedEffect(settings.accent) { speaker.setAccent(settings.accent.locale) }
+    val wordOfTheDay: State<WordEntry?> = produceState<WordEntry?>(null, repo) {
+        value = repo.wordOfTheDay(LocalDate.now().toEpochDay())
     }
 
     // No custom motion in the basic version: transitions are switched off.
@@ -42,27 +67,56 @@ fun DictionaryApp(themeMode: ThemeMode, onCycleTheme: () -> Unit) {
     ) {
         composable("home") {
             HomeScreen(
-                wordOfTheDay = SampleData.find(SampleData.WORD_OF_THE_DAY)!!,
-                recents = recents.mapNotNull { SampleData.find(it) },
-                themeMode = themeMode,
-                onCycleTheme = onCycleTheme,
+                wordOfTheDay = wordOfTheDay.value,
+                recents = vm.history.take(10),
+                onOpenSettings = { nav.navigate("settings") },
                 onSearch = { nav.navigate("search") },
-                onOpenWord = ::openWord,
+                onOpenWord = nav::openWord,
+                onOpenFavourites = { nav.navigate("favourites") },
+                onOpenHistory = { nav.navigate("history") },
+            )
+        }
+        composable("settings") {
+            SettingsScreen(settings = settings, onBack = { nav.popBackStack() })
+        }
+        composable("favourites") {
+            FavouritesScreen(
+                items = vm.favourites.toList(),
+                onBack = { nav.popBackStack() },
+                onOpenWord = nav::openWord,
+                onRemove = vm::removeFavourite,
+            )
+        }
+        composable("history") {
+            HistoryScreen(
+                items = vm.history.toList(),
+                onBack = { nav.popBackStack() },
+                onOpenWord = nav::openWord,
+                onRemove = vm::removeHistory,
+                onClear = vm::clearHistory,
             )
         }
         composable("search") {
-            SearchScreen(onBack = { nav.popBackStack() }, onOpenWord = ::openWord)
+            SearchScreen(repo = repo, onBack = { nav.popBackStack() }, onOpenWord = nav::openWord)
         }
         composable(
             route = "word/{headword}",
             arguments = listOf(navArgument("headword") { type = NavType.StringType }),
-        ) { entry ->
-            val word = entry.arguments?.getString("headword").orEmpty()
+        ) { backStack ->
+            val word = backStack.arguments?.getString("headword").orEmpty()
+            val load by produceState<WordLoad>(WordLoad.Loading, word, repo) {
+                value = repo.entry(word)?.let { WordLoad.Found(it) } ?: WordLoad.NotFound
+            }
             WordScreen(
                 requested = word,
-                entry = SampleData.find(word),
+                load = load,
                 onBack = { nav.popBackStack() },
-                onOpenWord = ::openWord,
+                onOpenWord = nav::openWord,
+                onViewed = vm::recordViewed,
+                canSpeak = speaker.ready,
+                onSpeak = speaker::speak,
+                isFavourite = vm.isFavourite(word),
+                onToggleFavourite = vm::toggleFavourite,
             )
         }
     }
