@@ -1,9 +1,59 @@
+# ── Secrets: never commit these ───────────────────────────────────────────────
+*.jks
+*.keystore
+*.p12
+*.pfx
+*.pem
+*.key
+keystore.properties
+signing.properties
+.env
+.env.*
+!.env.example
+
+# ── Gradle / Android build output ─────────────────────────────────────────────
 .gradle/
 build/
+.kotlin/
 local.properties
+captures/
+.externalNativeBuild/
+.cxx/
 *.apk
 *.aab
-.idea/
-.kotlin/
+*.ap_
+*.dex
+*.hprof
+!gradle/wrapper/gradle-wrapper.jar
+
+# ── Large or regenerable data (published as a GitHub release asset, see dictionary-db.txt) ──
 dict-data/
 app/src/main/assets/dictionary.db
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+*.jsonl
+*.jsonl.gz
+*.xml.gz
+
+# ── Python (pipeline/) ────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# ── Editors and OS ────────────────────────────────────────────────────────────
+.idea/
+*.iml
+.vscode/
+.fleet/
+*.swp
+*~
+.DS_Store
+Thumbs.db

@@ -1,0 +1,13 @@
+# Normalise line endings; the repo is LF everywhere except Windows batch files.
+* text=auto eol=lf
+*.bat text eol=crlf
+gradlew text eol=lf
+
+# Never diff or merge these as text.
+*.png binary
+*.webp binary
+*.ttf binary
+*.otf binary
+*.jar binary
+*.gz binary
+*.db binary

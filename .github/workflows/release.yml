@@ -1,0 +1,64 @@
+name: release
+
+# Push a signed tag such as v0.1.0 to build and publish. "Run workflow" builds without publishing.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      GH_TOKEN: ${{ github.token }}
+      HAS_KEYSTORE: ${{ secrets.KEYSTORE_B64 != '' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      # dictionary.db is too big for git. It lives in a release named in dictionary-db.txt, pinned by checksum.
+      - name: Fetch dictionary database
+        run: |
+          read -r TAG SHA < dictionary-db.txt
+          gh release download "$TAG" --pattern dictionary.db --output dictionary.db
+          echo "$SHA  dictionary.db" | sha256sum -c -
+
+      # Optional: only when the KEYSTORE_B64, KEYSTORE_PASSWORD and KEY_ALIAS secrets exist.
+      - name: Prepare signing key
+        if: env.HAS_KEYSTORE == 'true'
+        env:
+          KEYSTORE_B64: ${{ secrets.KEYSTORE_B64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+        run: |
+          echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.p12"
+          printf 'storeFile=%s\nstorePassword=%s\nkeyAlias=%s\n' \
+            "$RUNNER_TEMP/release.p12" "$KEYSTORE_PASSWORD" "$KEY_ALIAS" > keystore.properties
+
+      - name: Build release APK
+        run: ./gradlew --no-daemon assembleRelease -PdictionaryDb="$PWD/dictionary.db"
+
+      - name: Collect and checksum
+        run: |
+          mkdir -p dist
+          cp app/build/outputs/apk/release/*.apk dist/
+          (cd dist && sha256sum *.apk > SHA256SUMS && cat SHA256SUMS)
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fixionary-apk
+          path: dist/*
+
+      - name: Publish release
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: gh release create "$GITHUB_REF_NAME" dist/* --title "Fixionary ${GITHUB_REF_NAME#v}" --generate-notes
