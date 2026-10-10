@@ -7,7 +7,7 @@ import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Gavel
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Lock
-import androidx.compose.material.icons.outlined.MenuBook
+import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.outlined.TextFields
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -87,7 +87,7 @@ fun AboutScreen(onBack: () -> Unit, onOpenNotice: (String) -> Unit) {
         SectionHeader("Dictionary data")
         DictGroup(dataNotices) { n ->
             DictRow(
-                title = n.title, subtitle = n.subtitle, icon = Icons.Outlined.MenuBook,
+                title = n.title, subtitle = n.subtitle, icon = Icons.AutoMirrored.Outlined.MenuBook,
                 accent = Accents.Violet, onClick = { onOpenNotice(n.id) },
             )
         }
