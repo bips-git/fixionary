@@ -1,0 +1,6 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+    <!-- Themed icon: the page in one colour with the headword and lines cut out. -->
+    <path android:fillColor="#FF000000" android:fillType="evenOdd"
+        android:pathData="M36,26H64L76,38V78a4,4 0 0 1 -4,4H36a4,4 0 0 1 -4,-4V30a4,4 0 0 1 4,-4ZM42,46h16a3,3 0 0 1 0,6h-16a3,3 0 0 1 0,-6ZM64.8,49a3.2,3.2 0 1 0 6.4,0a3.2,3.2 0 1 0 -6.4,0ZM40.8,58h26.4a1.8,1.8 0 0 1 0,3.6h-26.4a1.8,1.8 0 0 1 0,-3.6ZM40.8,66h18.4a1.8,1.8 0 0 1 0,3.6h-18.4a1.8,1.8 0 0 1 0,-3.6Z" />
+</vector>

@@ -8,7 +8,7 @@ android {
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "com.bips.dictionary"
+        applicationId = "io.github.bips_git.fixionary"
         minSdk = 26
         targetSdk = 37
         versionCode = 1
