@@ -1,5 +1,7 @@
 package com.bips.dictionary.ui.screens
 
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
@@ -143,6 +145,19 @@ private fun WordContent(
             }
         }
 
+        if (entry.formOf.isNotEmpty()) item(key = "form-of") {
+            Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                entry.formOf.forEach { f ->
+                    Text(
+                        f.note.replaceFirstChar { it.uppercase() } + "  ›",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.clickable { onOpenWord(f.lemma) }.padding(vertical = 6.dp),
+                    )
+                }
+            }
+        }
+
         // One group per part of speech, senses numbered within it.
         entry.senses.groupBy { it.pos }.forEach { (pos, senses) ->
             item(key = "pos-$pos") { SectionHeader(pos.replaceFirstChar { it.uppercase() }) }
@@ -164,11 +179,31 @@ private fun WordContent(
             }
         }
 
+        entry.etymology?.let { origin ->
+            item(key = "hdr-origin") { SectionHeader("Origin") }
+            item(key = "origin") {
+                Surface(
+                    shape = groupedShape(0, 1),
+                    color = MaterialTheme.colorScheme.surfaceContainer,
+                    modifier = Modifier.fillMaxWidth(),
+                ) { Text(origin, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(16.dp)) }
+            }
+        }
+
         chipSection("Synonyms", entry.synonyms, Accents.Green, onOpenWord)
         chipSection("Antonyms", entry.antonyms, Accents.Amber, onOpenWord)
         chipSection("Broader terms", entry.broader, Accents.Violet, onOpenWord)
         chipSection("Narrower terms", entry.narrower, Accents.Blue, onOpenWord)
         chipSection("Related", entry.related, Accents.Teal, onOpenWord)
+
+        if (entry.etymology != null || entry.senses.any { it.wiktionary }) item(key = "credit") {
+            Text(
+                "Includes content from Wiktionary, licensed CC BY-SA 4.0. See About & licences.",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(16.dp),
+            )
+        }
     }
 }
 

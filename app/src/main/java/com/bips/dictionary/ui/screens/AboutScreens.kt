@@ -31,6 +31,7 @@ private class Notice(val id: String, val title: String, val subtitle: String, @R
 private val dataNotices = listOf(
     Notice("oewn", "Open English WordNet", "Definitions, examples, synonyms · CC BY 4.0", R.raw.licence_oewn),
     Notice("wordnet", "Princeton WordNet licence", "Original WordNet 3.0 copyright notice", R.raw.licence_wordnet),
+    Notice("wiktionary", "Wiktionary", "Origins, extra words, forms · CC BY-SA 4.0", R.raw.licence_wiktionary),
     Notice("wordfreq", "wordfreq", "Word-frequency ranking · CC BY-SA 4.0", R.raw.licence_wordfreq),
 )
 private val softwareNotices = listOf(

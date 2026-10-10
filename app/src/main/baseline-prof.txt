@@ -1,0 +1,6 @@
+# Starter baseline profile for Fixionary (hand-written; replace with a recorded one later).
+# Flags: H = hot, S = startup, P = post-startup. Android pre-compiles these at install time.
+# Compose, Navigation and Lifecycle already ship their own profiles, which the build merges in;
+# this file covers the app's own code, which has none.
+Lcom/bips/dictionary/**;
+HSPLcom/bips/dictionary/**->**(**)**

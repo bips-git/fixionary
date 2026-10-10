@@ -165,7 +165,7 @@ private fun ResultRow(
     ) {
         DictRow(
             title = entry.headword,
-            subtitle = "${entry.pos} · ${entry.definition}",
+            subtitle = (entry.formNote?.let { it.replaceFirstChar { c -> c.uppercase() } + " · " } ?: "") + "${entry.pos} · ${entry.definition}",
             onClick = { onOpenWord(entry.headword) },
         )
     }

@@ -38,6 +38,14 @@ class DictionaryRepository(private val db: SQLiteDatabase) {
         val hits = cursor.use { c ->
             buildList { while (c.moveToNext()) add(SearchHit(c.getString(0), c.getString(1), c.getString(2))) }
         }
+        // An inflected form ("ran", "mice") also shows the base word right after any exact match.
+        val formMatches = if (hasForms && q.isNotEmpty() && ' ' !in q) formHits(q) else emptyList()
+        if (formMatches.isNotEmpty()) {
+            val exact = hits.filter { fold(it.headword) == q }
+            val shown = (exact + formMatches).map { it.headword }.toSet()
+            return@withContext exact + formMatches.filter { f -> exact.none { it.headword == f.headword } } +
+                hits.filter { it !in exact && it.headword !in shown }
+        }
         // Few prefix matches usually means a typo: add spelling suggestions after them (single words only,
         // so a phrase like "fear of" does not pull in unrelated look-alikes).
         if (q.length >= FUZZY_MIN_QUERY && ' ' !in q && hits.size < FUZZY_TRIGGER) hits + fuzzyHits(q, hits) else hits
@@ -119,6 +127,47 @@ class DictionaryRepository(private val db: SQLiteDatabase) {
 
     // ---- search by meaning ---------------------------------------------------------------
 
+    private fun hasTable(name: String) = db.rawQuery(
+        "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?", arrayOf(name),
+    ).use { it.moveToFirst() }
+
+    /** Schema v3 (Wiktionary merge): inflected forms table and the per-definition source flag. */
+    val hasForms: Boolean = hasTable("forms")
+    private val hasSource: Boolean = db.rawQuery("PRAGMA table_info(synsets)", null).use { c ->
+        var found = false
+        while (c.moveToNext()) if (c.getString(1) == "src") found = true
+        found
+    }
+
+    private fun formNote(lemma: String, note: String?): String? {
+        val n = note?.trim().orEmpty()
+        if (n.isEmpty() || n.lowercase() in JUNK_NOTES) return null
+        return if (" of " in n) n else "$n form of $lemma"
+    }
+
+    private fun formHits(q: String): List<SearchHit> = db.rawQuery(
+        "SELECT w.headword, f.note, w.id, " +
+            "(SELECT y.pos FROM senses s JOIN synsets y ON y.id = s.synset_id WHERE s.word_id = w.id ORDER BY s.sense_order LIMIT 1), " +
+            "(SELECT y.definition FROM senses s JOIN synsets y ON y.id = s.synset_id WHERE s.word_id = w.id ORDER BY s.sense_order LIMIT 1) " +
+            "FROM forms f JOIN words w ON w.id = f.lemma_id WHERE f.form = ? " +
+            // Only a more common word counts as the base: "run" is not a form of the rare dialect word "rin".
+            "AND f.lemma_id < COALESCE((SELECT MIN(x.id) FROM words x WHERE x.headword_lc = f.form), 2147483647) " +
+            "ORDER BY w.freq_rank LIMIT 4",
+        arrayOf(q),
+    ).use { c ->
+        buildList {
+            while (c.moveToNext()) {
+                val note = formNote(c.getString(0), c.getStringOrNull(1)) ?: continue
+                val pos = c.getStringOrNull(3) ?: continue
+                add(c.getLong(2) to SearchHit(c.getString(0), pos, c.getStringOrNull(4).orEmpty(), formNote = note))
+            }
+        }
+    }.distinctBy { it.second.headword }.let { list ->
+        // Most common base first; a base 10x rarer than that (a dialect or archaic word) is noise.
+        val top = list.firstOrNull()?.first ?: return@let emptyList<SearchHit>()
+        list.filter { it.first <= top * 10 }.map { it.second }.take(2)
+    }
+
     /** True when dictionary.db carries the definition index (added by pipeline/add_meaning_index.py). */
     val hasMeaningIndex: Boolean = db.rawQuery(
         "SELECT 1 FROM sqlite_master WHERE name = 'synset_fts'", null,
@@ -163,10 +212,10 @@ class DictionaryRepository(private val db: SQLiteDatabase) {
         val idArg = arrayOf(id.toString())
 
         val senses = db.rawQuery(
-            "SELECT y.pos, y.definition, y.example FROM senses s JOIN synsets y ON y.id = s.synset_id " +
+            "SELECT y.pos, y.definition, y.example, ${if (hasSource) "y.src" else "0"} FROM senses s JOIN synsets y ON y.id = s.synset_id " +
                 "WHERE s.word_id = ? ORDER BY s.sense_order",
             idArg,
-        ).use { c -> buildList { while (c.moveToNext()) add(Sense(c.getString(0), c.getString(1), c.getStringOrNull(2))) } }
+        ).use { c -> buildList { while (c.moveToNext()) add(Sense(c.getString(0), c.getString(1), c.getStringOrNull(2), c.getInt(3) == 1)) } }
         if (senses.isEmpty()) return@withContext null
 
         // Synonyms: the other words that share a synset with one of this word's senses.
@@ -195,6 +244,21 @@ class DictionaryRepository(private val db: SQLiteDatabase) {
         val ipa = db.rawQuery("SELECT ipa FROM pronunciations WHERE word_id = ? LIMIT 1", idArg)
             .use { c -> if (c.moveToFirst()) c.getString(0) else null }
 
+        val etymology = db.rawQuery("SELECT text FROM etymology WHERE word_id = ?", idArg)
+            .use { c -> if (c.moveToFirst()) c.getString(0) else null }
+        val formOf: List<FormOf> = if (!hasForms) emptyList() else db.rawQuery(
+            "SELECT w.headword, f.note FROM forms f JOIN words w ON w.id = f.lemma_id " +
+                "WHERE f.form = ? AND f.lemma_id < ? ORDER BY f.lemma_id LIMIT 6",
+            arrayOf(fold(headword), id.toString()),
+        ).use { c ->
+            buildList {
+                while (c.moveToNext()) {
+                    val note = formNote(c.getString(0), c.getStringOrNull(1)) ?: continue
+                    add(FormOf(c.getString(0), note))
+                }
+            }
+        }.distinctBy { it.lemma }.take(2)
+
         fun rel(type: String) = relations[type]?.toList().orEmpty()
         // "Related" must not repeat words already shown in another section.
         val taken = HashSet<String>().apply {
@@ -205,6 +269,7 @@ class DictionaryRepository(private val db: SQLiteDatabase) {
             synonyms = synonyms.toList(), antonyms = rel("antonym"),
             broader = rel("hypernym"), narrower = narrower,
             related = rel("related").filter { it !in taken }.take(MAX_RELATED),
+            etymology = etymology, formOf = formOf,
         )
     }
 
@@ -221,6 +286,7 @@ class DictionaryRepository(private val db: SQLiteDatabase) {
     private fun Cursor.getStringOrNull(i: Int): String? = if (isNull(i)) null else getString(i)
 
     private companion object {
+        val JUNK_NOTES = setOf("alternative", "archaic", "obsolete", "dialectal", "nonstandard", "rare", "dated", "informal")
         val STOP_WORDS = setOf(
             "a", "an", "the", "of", "to", "in", "on", "for", "and", "or", "is", "are", "that",
             "with", "by", "at", "as", "it", "be", "who", "which", "what", "something", "someone",

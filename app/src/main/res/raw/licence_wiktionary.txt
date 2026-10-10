@@ -1,0 +1,9 @@
+Wiktionary (English)
+https://en.wiktionary.org/
+
+Word origins, extra common words and definitions, IPA pronunciations and inflected forms (for example "ran" as a form of "run") come from the English Wiktionary, written by the Wiktionary contributors. The text is available under the Creative Commons Attribution-ShareAlike 4.0 International licence (CC BY-SA 4.0):
+https://creativecommons.org/licenses/by-sa/4.0/
+
+Changes made: entries were machine-extracted, filtered by word frequency, shortened and reformatted for offline use. Definitions taken from Wiktionary are marked in the app. Wiktionary-derived data in this app remains under CC BY-SA 4.0; anyone reusing it must give credit and share adaptations under the same licence.
+
+The data was extracted with wiktextract (Tatu Ylonen and contributors, MIT licence) and distributed through kaikki.org. See: Tatu Ylonen, "Wiktextract: Wiktionary as Machine-Readable Structured Data", LREC 2022.
