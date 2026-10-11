@@ -1,7 +1,9 @@
 package com.bips.dictionary
 
 import android.graphics.Color as AndroidColor
+import android.content.ComponentCallbacks2
 import android.os.Bundle
+import androidx.activity.viewModels
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
@@ -18,6 +20,14 @@ import com.bips.dictionary.ui.screens.ThemeMode
 import com.bips.dictionary.ui.theme.DictionaryTheme
 
 class MainActivity : ComponentActivity() {
+    private val vm: AppViewModel by viewModels()
+
+    /** Low-memory phones: when the app goes to the background, give back what can be rebuilt later. */
+    override fun onTrimMemory(level: Int) {
+        super.onTrimMemory(level)
+        if (level >= ComponentCallbacks2.TRIM_MEMORY_UI_HIDDEN) vm.trimMemory()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {

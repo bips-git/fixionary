@@ -31,6 +31,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -52,10 +53,13 @@ import kotlinx.coroutines.launch
 private fun rememberUndoRemoval(
     onRemove: (String) -> Unit,
     onRestore: (SearchHit) -> Unit,
-): Pair<SnackbarHostState, (SearchHit) -> Unit> {
+): Triple<SnackbarHostState, (SearchHit) -> Unit, Map<String, Int>> {
     val snackbar = remember { SnackbarHostState() }
+    // Bumped on every removal so a restored row gets a fresh identity and never inherits the swiped-away state.
+    val generations = remember { mutableStateMapOf<String, Int>() }
     val scope = rememberCoroutineScope()
     val remove: (SearchHit) -> Unit = { hit ->
+        generations[hit.headword] = (generations[hit.headword] ?: 0) + 1
         onRemove(hit.headword)
         scope.launch {
             snackbar.currentSnackbarData?.dismiss()
@@ -67,7 +71,7 @@ private fun rememberUndoRemoval(
             if (result == SnackbarResult.ActionPerformed) onRestore(hit)
         }
     }
-    return snackbar to remove
+    return Triple(snackbar, remove, generations)
 }
 
 @Composable
@@ -78,14 +82,14 @@ fun FavouritesScreen(
     onRemove: (String) -> Unit,
     onRestore: (SearchHit) -> Unit,
 ) {
-    val (snackbar, remove) = rememberUndoRemoval(onRemove, onRestore)
+    val (snackbar, remove, generations) = rememberUndoRemoval(onRemove, onRestore)
     DictLazyScreen(
         title = "Favourites",
         onBack = onBack,
         snackbarHost = { SnackbarHost(snackbar) },
     ) {
         if (items.isEmpty()) item { EmptyNote("Tap the star on a word to save it here.") }
-        else savedWords(items, favourites = true, onOpenWord = onOpenWord, onRemove = remove)
+        else savedWords(items, favourites = true, generations = generations, onOpenWord = onOpenWord, onRemove = remove)
     }
 }
 
@@ -99,7 +103,7 @@ fun HistoryScreen(
     onClear: () -> Unit,
 ) {
     var confirmClear by rememberSaveable { mutableStateOf(false) }
-    val (snackbar, remove) = rememberUndoRemoval(onRemove, onRestore)
+    val (snackbar, remove, generations) = rememberUndoRemoval(onRemove, onRestore)
 
     DictLazyScreen(
         title = "History",
@@ -114,7 +118,7 @@ fun HistoryScreen(
         },
     ) {
         if (items.isEmpty()) item { EmptyNote("Words you look up will appear here.") }
-        else savedWords(items, favourites = false, onOpenWord = onOpenWord, onRemove = remove)
+        else savedWords(items, favourites = false, generations = generations, onOpenWord = onOpenWord, onRemove = remove)
     }
 
     if (confirmClear) {
@@ -132,11 +136,12 @@ fun HistoryScreen(
 private fun LazyListScope.savedWords(
     items: List<SearchHit>,
     favourites: Boolean,
+    generations: Map<String, Int>,
     onOpenWord: (String) -> Unit,
     onRemove: (SearchHit) -> Unit,
 ) {
     val label = if (favourites) "Remove from favourites" else "Remove from history"
-    itemsIndexed(items, key = { _, hit -> hit.headword }) { index, hit ->
+    itemsIndexed(items, key = { _, hit -> "${hit.headword}#${generations[hit.headword] ?: 0}" }) { index, hit ->
         val shape = groupedShape(index, items.size)
         val dismiss = rememberSwipeToDismissBoxState(
             confirmValueChange = { value ->

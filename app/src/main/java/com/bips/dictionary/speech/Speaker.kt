@@ -20,10 +20,20 @@ class Speaker(context: Context, private var locale: Locale = Locale.US) {
     var ready by mutableStateOf(false)
         private set
 
-    private var tts: TextToSpeech? = TextToSpeech(context.applicationContext) { status ->
-        val engine = tts
-        if (status == TextToSpeech.SUCCESS && engine != null) {
-            ready = isUsable(engine.setLanguage(locale))
+    private val appContext = context.applicationContext
+    private var tts: TextToSpeech? = null
+
+    /**
+     * Starts the engine. Called only while a word page is on screen: the system speech service is a
+     * heavy process, so it is not bound at app start and is released again by [shutdown].
+     */
+    fun prepare() {
+        if (tts != null) return
+        tts = TextToSpeech(appContext) { status ->
+            val engine = tts
+            if (status == TextToSpeech.SUCCESS && engine != null) {
+                ready = isUsable(engine.setLanguage(locale))
+            }
         }
     }
 

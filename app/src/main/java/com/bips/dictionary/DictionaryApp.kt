@@ -1,6 +1,9 @@
 package com.bips.dictionary
 
 import android.net.Uri
+import android.os.PowerManager
+import androidx.lifecycle.compose.LifecycleStartEffect
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import android.provider.Settings
@@ -65,6 +68,13 @@ private fun DictionaryNav(
     val nav = rememberNavController()
     val speaker = rememberSpeaker()
     LaunchedEffect(settings.accent) { speaker.setAccent(settings.accent.locale) }
+    // Speech engine only while a word page is showing and the app is in the foreground (activity lifecycle).
+    val currentRoute = nav.currentBackStackEntryAsState().value?.destination?.route
+    val onWordPage = currentRoute?.startsWith("word/") == true
+    LifecycleStartEffect(onWordPage) {
+        if (onWordPage) speaker.prepare()
+        onStopOrDispose { speaker.shutdown() }
+    }
     val wordOfTheDay: State<WordEntry?> = produceState<WordEntry?>(null, repo) {
         value = repo.wordOfTheDay(LocalDate.now().toEpochDay())
     }
@@ -72,7 +82,9 @@ private fun DictionaryNav(
     // Short, quiet transitions. Skipped entirely when the phone's animation scale is off.
     val context = LocalContext.current
     val animate = remember {
-        Settings.Global.getFloat(context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) != 0f
+        // Also off in battery saver: no animation work when the phone is trying to save power.
+        Settings.Global.getFloat(context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) != 0f &&
+            context.getSystemService(PowerManager::class.java)?.isPowerSaveMode != true
     }
     NavHost(
         navController = nav,

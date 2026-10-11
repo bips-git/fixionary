@@ -56,38 +56,6 @@ fun SearchPill(onClick: () -> Unit, modifier: Modifier = Modifier) {
     }
 }
 
-@Composable
-fun WordOfTheDayCard(entry: WordEntry, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    Surface(
-        onClick = onClick,
-        shape = MaterialTheme.shapes.extraLarge,
-        color = MaterialTheme.colorScheme.primaryContainer,
-        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-        modifier = modifier.fillMaxWidth(),
-    ) {
-        val first = entry.senses.first()
-        Column(Modifier.padding(20.dp)) {
-            Text("Word of the day", style = MaterialTheme.typography.labelMedium, modifier = Modifier.alpha(0.8f))
-            Spacer(Modifier.height(4.dp))
-            Text(entry.headword, style = MaterialTheme.typography.headlineMedium)
-            Spacer(Modifier.height(4.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    first.pos,
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-                entry.ipa?.let {
-                    Spacer(Modifier.width(8.dp))
-                    Text(it, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.alpha(0.8f))
-                }
-            }
-            Spacer(Modifier.height(8.dp))
-            Text(first.definition, style = MaterialTheme.typography.bodyLarge)
-        }
-    }
-}
-
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun WordChips(

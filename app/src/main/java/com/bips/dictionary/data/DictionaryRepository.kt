@@ -13,6 +13,17 @@ import kotlinx.coroutines.withContext
  */
 class DictionaryRepository(private val db: SQLiteDatabase) {
 
+    init {
+        // Let the OS page the read-only file in and out itself instead of SQLite keeping its own copy.
+        runCatching { db.rawQuery("PRAGMA mmap_size = 67108864", null).use { it.moveToFirst() } }
+    }
+
+    /** Called when the system wants memory back: drops the typo index (reloads on demand) and cached pages. */
+    fun trimMemory() {
+        fuzzyIndex = null
+        SQLiteDatabase.releaseMemory()
+    }
+
     private val hitColumns = """
         SELECT w.headword,
           (SELECT y.pos FROM senses s JOIN synsets y ON y.id = s.synset_id WHERE s.word_id = w.id ORDER BY s.sense_order LIMIT 1),

@@ -66,6 +66,10 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    fun trimMemory() {
+        (dbState.value as? DbState.Ready)?.repo?.trimMemory()
+    }
+
     fun recordViewed(entry: WordEntry) {
         val hit = entry.toHit()
         history.removeAll { it.headword == hit.headword }

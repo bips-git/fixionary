@@ -21,8 +21,14 @@ object DictionaryInstaller {
 
         if (!dbFile.exists() || !stampFile.exists() || stampFile.readText() != stamp) {
             val tmp = File(dir, "dictionary.db.tmp")
-            context.assets.open(ASSET).use { input ->
-                tmp.outputStream().use { out -> input.copyTo(out, 256 * 1024) }
+            tmp.delete()                              // a half-written file from an interrupted copy
+            try {
+                context.assets.open(ASSET).use { input ->
+                    tmp.outputStream().use { out -> input.copyTo(out, 256 * 1024) }
+                }
+            } catch (e: java.io.IOException) {
+                tmp.delete()
+                throw java.io.IOException("Could not prepare the dictionary. Free up some storage and try again.", e)
             }
             if (dbFile.exists()) dbFile.delete()
             check(tmp.renameTo(dbFile)) { "Could not install the dictionary file" }
