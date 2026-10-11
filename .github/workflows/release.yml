@@ -2,9 +2,10 @@ name: release
 
 on:
   push:
-    tags: ['v*']
+    tags: ['v[0-9]+.[0-9]+.[0-9]+']   # exact versions only, like v1.0.0
+  workflow_dispatch:          # dry run: builds the unsigned APK only; sign and publish never run
 
-permissions: {}   # nothing by default; each job asks for only what it needs
+permissions: {}               # nothing by default; each job asks for only what it needs
 
 concurrency:
   group: release-${{ github.ref }}
@@ -13,12 +14,22 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-26.04
+    timeout-minutes: 30       # the default is 360; a stuck build must not run for hours
     permissions:
-      contents: read
+      contents: read          # also lets this job download the data release
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          fetch-depth: 0      # full history, needed for the "tag is on main" check
+
+      - name: Tag must be on main
+        if: github.event_name == 'push'
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main \
+            || { echo "This tag is not on main. Releases must come from main."; exit 1; }
+
       - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
         with:
           distribution: temurin
@@ -26,7 +37,32 @@ jobs:
       - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
         with:
           cache-disabled: true   # caches can be poisoned; release builds start clean
-      - run: ./gradlew assembleRelease --no-daemon --stacktrace
+
+      # dictionary.db is too big for git. It is a release asset named in dictionary-db.txt
+      # ("data-v3 <sha256>"), and the build refuses anything whose checksum differs.
+      - name: Fetch and verify dictionary database
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          read -r TAG SHA EXTRA < dictionary-db.txt
+          [[ "$TAG" =~ ^data-v[0-9]+$ ]]  || { echo "dictionary-db.txt: bad tag '$TAG'"; exit 1; }
+          [[ "$SHA" =~ ^[0-9a-f]{64}$ ]]  || { echo "dictionary-db.txt: SHA must be 64 lowercase hex characters, with no file name after it"; exit 1; }
+          [ -z "${EXTRA:-}" ]             || { echo "dictionary-db.txt: unexpected extra text"; exit 1; }
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --pattern dictionary.db --output dictionary.db
+          echo "$SHA  dictionary.db" | sha256sum -c -
+          head -c 15 dictionary.db | grep -q 'SQLite format 3' || { echo "dictionary.db is not an SQLite file"; exit 1; }
+          ls -l dictionary.db
+
+      - run: ./gradlew assembleRelease --no-daemon --stacktrace -PdictionaryDb="$PWD/dictionary.db"
+
+      - name: Sanity check APK size
+        run: |
+          set -euo pipefail
+          SIZE=$(stat -c%s app/build/outputs/apk/release/*-unsigned.apk)
+          echo "APK size: $SIZE bytes"
+          [ "$SIZE" -gt 15000000 ] || { echo "APK is too small, so the database is probably missing"; exit 1; }
+
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: unsigned-apk
@@ -36,7 +72,9 @@ jobs:
 
   sign:
     needs: build
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-26.04
+    timeout-minutes: 10
     environment: release        # this line triggers your approval and unlocks the secrets
     permissions: {}             # this job cannot touch your repo at all
     steps:
@@ -57,7 +95,7 @@ jobs:
           trap 'rm -f "$KS"' EXIT
           printf '%s' "$KEYSTORE_B64" | base64 -d > "$KS"
           "$APKSIGNER" sign --ks "$KS" --ks-key-alias fixionary \
-            --ks-pass env:KS_PASS --out "$OUT" unsigned/*-unsigned.apk
+            --ks-pass env:KS_PASS --key-pass env:KS_PASS --out "$OUT" unsigned/*-unsigned.apk
           GOT="$("$APKSIGNER" verify --print-certs "$OUT" | grep -m1 'certificate SHA-256 digest' | awk '{print $NF}')"
           echo "Signed with: $GOT"
           [ "$GOT" = "$EXPECTED" ] || { echo "Fingerprint mismatch, aborting"; exit 1; }
@@ -70,7 +108,9 @@ jobs:
 
   publish:
     needs: sign
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-26.04
+    timeout-minutes: 10
     permissions:
       contents: write       # create the release
       id-token: write       # needed for attestation
