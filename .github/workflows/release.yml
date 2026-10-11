@@ -1,64 +1,94 @@
 name: release
 
-# Push a signed tag such as v0.1.0 to build and publish. "Run workflow" builds without publishing.
 on:
   push:
-    tags: ["v*"]
-  workflow_dispatch:
+    tags: ['v*']
 
-permissions:
-  contents: write
+permissions: {}   # nothing by default; each job asks for only what it needs
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
-  apk:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 45
-    env:
-      GH_TOKEN: ${{ github.token }}
-      HAS_KEYSTORE: ${{ secrets.KEYSTORE_B64 != '' }}
+  build:
+    runs-on: ubuntu-26.04
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-java@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
         with:
           distribution: temurin
-          java-version: "21"
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+        with:
+          cache-disabled: true   # caches can be poisoned; release builds start clean
+      - run: ./gradlew assembleRelease --no-daemon --stacktrace
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: unsigned-apk
+          path: app/build/outputs/apk/release/*-unsigned.apk
+          if-no-files-found: error
+          retention-days: 7
 
-      - uses: gradle/actions/setup-gradle@v4
-
-      # dictionary.db is too big for git. It lives in a release named in dictionary-db.txt, pinned by checksum.
-      - name: Fetch dictionary database
-        run: |
-          read -r TAG SHA < dictionary-db.txt
-          gh release download "$TAG" --pattern dictionary.db --output dictionary.db
-          echo "$SHA  dictionary.db" | sha256sum -c -
-
-      # Optional: only when the KEYSTORE_B64, KEYSTORE_PASSWORD and KEY_ALIAS secrets exist.
-      - name: Prepare signing key
-        if: env.HAS_KEYSTORE == 'true'
+  sign:
+    needs: build
+    runs-on: ubuntu-26.04
+    environment: release        # this line triggers your approval and unlocks the secrets
+    permissions: {}             # this job cannot touch your repo at all
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: unsigned-apk
+          path: unsigned
+      - name: Sign and verify
         env:
           KEYSTORE_B64: ${{ secrets.KEYSTORE_B64 }}
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KS_PASS: ${{ secrets.KS_PASS }}
+          EXPECTED: ${{ vars.CERT_SHA256 }}
         run: |
-          echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.p12"
-          printf 'storeFile=%s\nstorePassword=%s\nkeyAlias=%s\n' \
-            "$RUNNER_TEMP/release.p12" "$KEYSTORE_PASSWORD" "$KEY_ALIAS" > keystore.properties
-
-      - name: Build release APK
-        run: ./gradlew --no-daemon assembleRelease -PdictionaryDb="$PWD/dictionary.db"
-
-      - name: Collect and checksum
-        run: |
-          mkdir -p dist
-          cp app/build/outputs/apk/release/*.apk dist/
-          (cd dist && sha256sum *.apk > SHA256SUMS && cat SHA256SUMS)
-
-      - uses: actions/upload-artifact@v4
+          set -euo pipefail
+          APKSIGNER="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)/apksigner"
+          KS="$RUNNER_TEMP/release.p12"
+          OUT="fixionary-${GITHUB_REF_NAME}.apk"
+          trap 'rm -f "$KS"' EXIT
+          printf '%s' "$KEYSTORE_B64" | base64 -d > "$KS"
+          "$APKSIGNER" sign --ks "$KS" --ks-key-alias fixionary \
+            --ks-pass env:KS_PASS --out "$OUT" unsigned/*-unsigned.apk
+          GOT="$("$APKSIGNER" verify --print-certs "$OUT" | grep -m1 'certificate SHA-256 digest' | awk '{print $NF}')"
+          echo "Signed with: $GOT"
+          [ "$GOT" = "$EXPECTED" ] || { echo "Fingerprint mismatch, aborting"; exit 1; }
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: fixionary-apk
-          path: dist/*
+          name: signed-apk
+          path: fixionary-*.apk
+          if-no-files-found: error
+          retention-days: 7
 
-      - name: Publish release
-        if: startsWith(github.ref, 'refs/tags/v')
-        run: gh release create "$GITHUB_REF_NAME" dist/* --title "Fixionary ${GITHUB_REF_NAME#v}" --generate-notes
+  publish:
+    needs: sign
+    runs-on: ubuntu-26.04
+    permissions:
+      contents: write       # create the release
+      id-token: write       # needed for attestation
+      attestations: write
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: signed-apk
+          path: dist
+      - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: dist/*.apk
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          (cd dist && sha256sum *.apk > SHA256SUMS.txt)
+          gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" \
+            --draft --verify-tag --generate-notes dist/*.apk dist/SHA256SUMS.txt
+          gh release edit "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --draft=false
