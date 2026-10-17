@@ -17,15 +17,14 @@ android {
 
     buildTypes {
         release {
-            // Compose is several times slower in a debug build, so judge scrolling and animation on this one.
-            // Signed with the debug key so it installs over your debug build and keeps your favourites.
+            // Left unsigned on purpose: the release workflow signs it with the real key in a separate job.
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
         }
     }
 
-    // Gradle runs on JDK 26; the app targets Java 17 bytecode.
+    // Gradle runs on JDK 21 in CI (any JDK 17+ works); the app targets Java 17 bytecode.
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
