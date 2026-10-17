@@ -1,6 +1,9 @@
 package com.bips.dictionary.ui.components
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -14,17 +17,18 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Search
-import androidx.compose.material3.AssistChip
-import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.bips.dictionary.data.WordEntry
 
@@ -56,6 +60,10 @@ fun SearchPill(onClick: () -> Unit, modifier: Modifier = Modifier) {
     }
 }
 
+/**
+ * Tap opens the word. Long-press (when [onWordLongClick] is set) runs a secondary action such as copy;
+ * the system already gives a long-press haptic.
+ */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun WordChips(
@@ -63,6 +71,7 @@ fun WordChips(
     accent: Color,
     onWordClick: (String) -> Unit,
     modifier: Modifier = Modifier,
+    onWordLongClick: ((String) -> Unit)? = null,
 ) {
     FlowRow(
         modifier = modifier.fillMaxWidth(),
@@ -70,16 +79,28 @@ fun WordChips(
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         words.forEach { word ->
-            AssistChip(
-                onClick = { onWordClick(word) },
-                label = { Text(word) },
-                shape = CircleShape,
-                border = null,
-                colors = AssistChipDefaults.assistChipColors(
-                    containerColor = accentWash(accent),
-                    labelColor = accentGlyph(accent),
-                ),
-            )
+            Box(Modifier.minimumInteractiveComponentSize(), contentAlignment = Alignment.Center) {
+                Box(
+                    Modifier
+                        .height(32.dp)
+                        .clip(CircleShape)
+                        .background(accentWash(accent))
+                        .combinedClickable(
+                            role = Role.Button,
+                            onClick = { onWordClick(word) },
+                            onLongClickLabel = "Copy",
+                            onLongClick = onWordLongClick?.let { { it(word) } },
+                        ),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        word,
+                        style = MaterialTheme.typography.labelLarge,
+                        color = accentGlyph(accent),
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                    )
+                }
+            }
         }
     }
 }
