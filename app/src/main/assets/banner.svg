@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 360" role="img" aria-labelledby="t d">
+  <title id="t">Fixionary</title>
+  <desc id="d">Fixionary: a fixed dictionary. Offline, ad-free, no permissions, open source.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#07070a"/>
+      <stop offset="1" stop-color="#0d122b"/>
+    </linearGradient>
+    <linearGradient id="brand" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#007aff"/>
+      <stop offset="0.5" stop-color="#03b1fc"/>
+      <stop offset="1" stop-color="#a855f7"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0" r="0.8">
+      <stop offset="0" stop-color="#a855f7" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#a855f7" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="360" rx="24" fill="url(#bg)"/>
+  <rect width="1200" height="360" rx="24" fill="url(#glow)"/>
+  <g fill="none" stroke="url(#brand)" stroke-width="2" opacity="0.35">
+    <path d="M0 300 C 200 250, 400 340, 600 295 S 1000 250, 1200 300"/>
+    <path d="M0 322 C 220 275, 420 355, 620 316 S 1000 276, 1200 322" opacity="0.6"/>
+  </g>
+  <g transform="translate(110 90)">
+    <rect width="120" height="150" rx="22" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.16)" stroke-width="2"/>
+    <path d="M30 40 H78 L94 56 V112 H30 Z" fill="url(#brand)" opacity="0.95"/>
+    <path d="M78 40 V56 H94 Z" fill="#ffffff" opacity="0.55"/>
+    <rect x="42" y="74" width="40" height="5" rx="2.5" fill="#07070a" opacity="0.55"/>
+    <rect x="42" y="88" width="30" height="5" rx="2.5" fill="#07070a" opacity="0.55"/>
+  </g>
+  <text x="270" y="170" font-family="Poppins, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="84" font-weight="700" fill="url(#brand)">Fixionary</text>
+  <text x="274" y="214" font-family="Raleway, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="28" fill="#a0a0b0">A fixed dictionary. Offline. Ad-free. Open source.</text>
+  <g font-family="Poppins, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="18" fill="#ffffff">
+    <g transform="translate(274 244)"><rect width="130" height="36" rx="18" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.18)"/><text x="65" y="24" text-anchor="middle">No internet</text></g>
+    <g transform="translate(418 244)"><rect width="170" height="36" rx="18" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.18)"/><text x="85" y="24" text-anchor="middle">No permissions</text></g>
+    <g transform="translate(602 244)"><rect width="130" height="36" rx="18" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.18)"/><text x="65" y="24" text-anchor="middle">No tracking</text></g>
+  </g>
+</svg>
