@@ -1,5 +1,6 @@
 package com.bips.dictionary.ui.components
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.RowScope
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
@@ -78,6 +80,8 @@ fun DictLazyScreen(
     onBack: (() -> Unit)? = null,
     actions: @Composable RowScope.() -> Unit = {},
     snackbarHost: @Composable () -> Unit = {},
+    /** One selection area around the whole list: drag handles across rows, tap anywhere to dismiss. */
+    selectable: Boolean = false,
     content: LazyListScope.() -> Unit,
 ) {
     val bg = MaterialTheme.colorScheme.background
@@ -102,11 +106,14 @@ fun DictLazyScreen(
             )
         },
     ) { padding ->
-        LazyColumn(
-            modifier = Modifier.padding(padding),
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(2.dp),
-            content = content,
-        )
+        val list: @Composable () -> Unit = {
+            LazyColumn(
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+                content = content,
+            )
+        }
+        if (selectable) SelectionContainer(Modifier.padding(padding)) { list() }
+        else Box(Modifier.padding(padding)) { list() }
     }
 }

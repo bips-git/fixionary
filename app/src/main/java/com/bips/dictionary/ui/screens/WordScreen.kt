@@ -22,7 +22,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.Surface
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.foundation.text.selection.DisableSelection
 import androidx.compose.foundation.layout.fillMaxWidth
 import com.bips.dictionary.ui.components.DictLazyScreen
 import com.bips.dictionary.ui.components.groupedShape
@@ -49,7 +49,6 @@ import androidx.compose.ui.unit.dp
 import com.bips.dictionary.data.WordEntry
 import com.bips.dictionary.data.WordLoad
 import com.bips.dictionary.data.entryText
-import com.bips.dictionary.data.originText
 import com.bips.dictionary.data.senseGroupText
 import com.bips.dictionary.data.wordListText
 import com.bips.dictionary.ui.components.Copier
@@ -106,6 +105,7 @@ private fun WordContent(
     DictLazyScreen(
         title = entry.headword,
         onBack = onBack,
+        selectable = true,
         snackbarHost = { SnackbarHost(snackbar) },
         actions = {
             if (canSpeak) {
@@ -151,7 +151,7 @@ private fun WordContent(
         },
     ) {
         item {
-            Row(Modifier.padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+            DisableSelection { Row(Modifier.padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     entry.senses.map { it.pos }.distinct().joinToString(" · "),
                     style = MaterialTheme.typography.labelLarge,
@@ -161,11 +161,11 @@ private fun WordContent(
                     Spacer(Modifier.width(8.dp))
                     Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-            }
+            } }
         }
 
         if (entry.formOf.isNotEmpty()) item(key = "form-of") {
-            Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+            DisableSelection { Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
                 entry.formOf.forEach { f ->
                     Text(
                         f.note.replaceFirstChar { it.uppercase() } + "  ›",
@@ -174,7 +174,7 @@ private fun WordContent(
                         modifier = Modifier.clickable { onOpenWord(f.lemma) }.padding(vertical = 6.dp),
                     )
                 }
-            }
+            } }
         }
 
         // One group per part of speech, senses numbered within it.
@@ -182,7 +182,7 @@ private fun WordContent(
             item(key = "pos-$pos") {
                 SectionHeader(
                     pos.replaceFirstChar { it.uppercase() },
-                    onCopy = { copier.copy("definitions", senseGroupText(entry.headword, pos, senses)) },
+                    onCopy = { copier.copy("definitions", senseGroupText(senses)) },
                 )
             }
             itemsIndexed(senses, key = { i, _ -> "$pos-$i" }) { i, sense ->
@@ -191,46 +191,46 @@ private fun WordContent(
                     color = MaterialTheme.colorScheme.surfaceContainer,
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    SelectionContainer { ListItem(
+                    ListItem(
                         leadingContent = {
-                            Text("${i + 1}", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                            DisableSelection {
+                                Text("${i + 1}", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                            }
                         },
                         headlineContent = { Text(sense.definition, style = MaterialTheme.typography.bodyLarge) },
                         supportingContent = sense.example?.let { ex -> { Text("“$ex”", fontStyle = FontStyle.Italic) } },
                         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                    ) }
+                    )
                 }
             }
         }
 
         entry.etymology?.let { origin ->
             item(key = "hdr-origin") {
-                SectionHeader("Origin", onCopy = { copier.copy("origin", originText(entry.headword, origin)) })
+                SectionHeader("Origin", onCopy = { copier.copy("origin", origin) })
             }
             item(key = "origin") {
                 Surface(
                     shape = groupedShape(0, 1),
                     color = MaterialTheme.colorScheme.surfaceContainer,
                     modifier = Modifier.fillMaxWidth(),
-                ) {
-                    SelectionContainer { Text(origin, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(16.dp)) }
-                }
+                ) { Text(origin, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(16.dp)) }
             }
         }
 
-        chipSection("Synonyms", entry.synonyms, Accents.Green, entry.headword, copier, onOpenWord)
-        chipSection("Antonyms", entry.antonyms, Accents.Amber, entry.headword, copier, onOpenWord)
-        chipSection("Broader terms", entry.broader, Accents.Violet, entry.headword, copier, onOpenWord)
-        chipSection("Narrower terms", entry.narrower, Accents.Blue, entry.headword, copier, onOpenWord)
-        chipSection("Related", entry.related, Accents.Teal, entry.headword, copier, onOpenWord)
+        chipSection("Synonyms", entry.synonyms, Accents.Green, copier, onOpenWord)
+        chipSection("Antonyms", entry.antonyms, Accents.Amber, copier, onOpenWord)
+        chipSection("Broader terms", entry.broader, Accents.Violet, copier, onOpenWord)
+        chipSection("Narrower terms", entry.narrower, Accents.Blue, copier, onOpenWord)
+        chipSection("Related", entry.related, Accents.Teal, copier, onOpenWord)
 
         if (entry.etymology != null || entry.senses.any { it.wiktionary }) item(key = "credit") {
-            Text(
+            DisableSelection { Text(
                 "Includes content from Wiktionary, licensed CC BY-SA 4.0. See About & licences.",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(16.dp),
-            )
+            ) }
         }
     }
 }
@@ -239,20 +239,22 @@ private fun LazyListScope.chipSection(
     title: String,
     words: List<String>,
     accent: Color,
-    headword: String,
     copier: Copier,
     onOpenWord: (String) -> Unit,
 ) {
     if (words.isEmpty()) return
     item(key = "hdr-$title") {
         // The button copies every word, even when only the first MAX_CHIPS are shown.
-        SectionHeader(title, onCopy = { copier.copy(title.lowercase(), wordListText(title, headword, words)) })
+        SectionHeader(title, onCopy = { copier.copy(title.lowercase(), wordListText(words)) })
     }
     item(key = "chips-$title") {
-        WordChips(
-            words.take(MAX_CHIPS), accent, onOpenWord,
-            // Long-press copies just that word; the system already vibrates on long-press.
-            onWordLongClick = { w -> copier.copy("“$w”", w, tick = false) },
-        )
+        // Chips keep their own tap and long-press, so they sit outside the screen's text selection.
+        DisableSelection {
+            WordChips(
+                words.take(MAX_CHIPS), accent, onOpenWord,
+                // Long-press copies just that word; the system already vibrates on long-press.
+                onWordLongClick = { w -> copier.copy("“$w”", w, tick = false) },
+            )
+        }
     }
 }

@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.text.selection.DisableSelection
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material3.Icon
@@ -21,15 +22,17 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun SectionHeader(text: String, onCopy: (() -> Unit)? = null) {
     if (onCopy == null) {
-        Text(
-            text,
-            style = MaterialTheme.typography.titleSmall,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(start = 16.dp, top = 20.dp, bottom = 8.dp).semantics { heading() },
-        )
+        DisableSelection {
+            Text(
+                text,
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(start = 16.dp, top = 20.dp, bottom = 8.dp).semantics { heading() },
+            )
+        }
         return
     }
-    Row(
+    DisableSelection { Row(
         Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp, top = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -47,5 +50,5 @@ fun SectionHeader(text: String, onCopy: (() -> Unit)? = null) {
                 modifier = Modifier.size(18.dp),
             )
         }
-    }
+    } }
 }
