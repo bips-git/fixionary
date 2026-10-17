@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fixionary — Offline English Dictionary for Android</title>
+<meta name="description" content="Fixionary is a fast, fully offline English dictionary and thesaurus for Android. No ads, no permissions, open source.">
+<meta name="theme-color" content="#07070a">
+<meta name="author" content="Bipul Das">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="Fixionary — Offline English Dictionary for Android">
+<meta property="og:description" content="Fast, fully offline dictionary and thesaurus. No ads, no permissions, open source.">
+<meta property="og:image" content="https://bips-git.github.io/fixionary/assets/og.png">
+<meta name="twitter:card" content="summary_large_image">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Raleway:wght@400..600&display=swap" rel="stylesheet">
+<script>document.documentElement.classList.add("js");</script>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- Inline icon sprite (Feather-style, MIT) -->
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></symbol>
+  <symbol id="i-wifi-off" viewBox="0 0 24 24"><line x1="1" y1="1" x2="23" y2="23"/><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/><path d="M10.71 5.05A16 16 0 0 1 22.58 9"/><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></symbol>
+  <symbol id="i-zap" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></symbol>
+  <symbol id="i-book-open" viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></symbol>
+  <symbol id="i-volume" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></symbol>
+  <symbol id="i-heart" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></symbol>
+  <symbol id="i-code" viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+  <symbol id="i-github" viewBox="0 0 24 24"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></symbol>
+  <symbol id="i-package" viewBox="0 0 24 24"><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></symbol>
+  <symbol id="i-external" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></symbol>
+  <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></symbol>
+  <symbol id="i-layers" viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></symbol>
+  <symbol id="i-smartphone" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></symbol>
+</svg>
+
+<a class="skip-link" href="#main">Skip to main content</a>
+
+<nav class="site-nav" aria-label="Section navigation">
+  <ul class="site-nav__list">
+    <li><a class="site-nav__link" href="#home">Home</a></li>
+    <li><a class="site-nav__link" href="#features">Features</a></li>
+    <li><a class="site-nav__link" href="#download">Download</a></li>
+    <li><a class="site-nav__link site-nav__link--icon" href="https://github.com/bips-git/fixionary" target="_blank" rel="noopener" aria-label="Fixionary on GitHub"><svg class="icon"><use href="#i-github"/></svg></a></li>
+  </ul>
+</nav>
+
+<!-- ================= HOME ================= -->
+<header id="home" class="hero">
+  <div class="hero__waves" aria-hidden="true">
+    <svg class="waves-svg" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMax slice" xmlns="http://www.w3.org/2000/svg">
+      <path class="wave wave--1" d="M0 739L45.7 731.5C91.3 724 182.7 709 274.2 698.7C365.7 688.3 457.3 682.7 548.8 696.5C640.3 710.3 731.7 743.7 823 761.2C914.3 778.7 1005.7 780.3 1097 783.7C1188.3 787 1279.7 792 1371.2 779.3C1462.7 766.7 1554.3 736.3 1645.8 735.5C1737.3 734.7 1828.7 763.3 1874.3 777.7L1920 792L1920 1081L0 1081Z"/>
+      <path class="wave wave--2" d="M0 859L45.7 853.7C91.3 848.3 182.7 837.7 274.2 818.3C365.7 799 457.3 771 548.8 770.7C640.3 770.3 731.7 797.7 823 803.2C914.3 808.7 1005.7 792.3 1097 775.7C1188.3 759 1279.7 742 1371.2 736C1462.7 730 1554.3 735 1645.8 748C1737.3 761 1828.7 782 1874.3 792.5L1920 803L1920 1081L0 1081Z"/>
+      <path class="wave wave--3" d="M0 833L45.7 834.3C91.3 835.7 182.7 838.3 274.2 851C365.7 863.7 457.3 886.3 548.8 886.5C640.3 886.7 731.7 864.3 823 864.7C914.3 865 1005.7 888 1097 884.3C1188.3 880.7 1279.7 850.3 1371.2 841.3C1462.7 832.3 1554.3 844.7 1645.8 849C1737.3 853.3 1828.7 849.7 1874.3 847.8L1920 846L1920 1081L0 1081Z"/>
+      <path class="wave wave--4" d="M0 947L45.7 933.3C91.3 919.7 182.7 892.3 274.2 887.3C365.7 882.3 457.3 899.7 548.8 901C640.3 902.3 731.7 887.7 823 891C914.3 894.3 1005.7 915.7 1097 915.3C1188.3 915 1279.7 893 1371.2 884.5C1462.7 876 1554.3 881 1645.8 881.5C1737.3 882 1828.7 878 1874.3 876L1920 874L1920 1081L0 1081Z"/>
+      <path class="wave wave--5" d="M0 1016L45.7 1009C91.3 1002 182.7 988 274.2 990.3C365.7 992.7 457.3 1011.3 548.8 1010.3C640.3 1009.3 731.7 988.7 823 984.8C914.3 981 1005.7 994 1097 996.7C1188.3 999.3 1279.7 991.7 1371.2 987.2C1462.7 982.7 1554.3 981.3 1645.8 984.3C1737.3 987.3 1828.7 994.7 1874.3 998.3L1920 1002L1920 1081L0 1081Z"/>
+    </svg>
+  </div>
+
+  <div class="hero__inner">
+    <div class="hero__copy">
+      <p class="eyebrow"><svg class="icon"><use href="#i-book-open"/></svg> English dictionary &amp; thesaurus for Android</p>
+      <h1 class="hero__title">Fixionary</h1>
+      <p class="hero__tagline" aria-live="off">
+        <span id="morph" class="morph">Offline.</span>
+      </p>
+      <p class="hero__lead">A fixed dictionary: fast, fully offline and free of clutter. Meanings, synonyms, pronunciation and word origins in one tiny app. No ads, no accounts, no permissions.</p>
+      <div class="hero__cta">
+        <a class="btn btn--primary" href="#download"><svg class="icon"><use href="#i-download"/></svg> Download</a>
+        <a class="btn" href="https://github.com/bips-git/fixionary" target="_blank" rel="noopener"><svg class="icon"><use href="#i-github"/></svg> Source code</a>
+      </div>
+      <ul class="hero__badges">
+        <li><svg class="icon"><use href="#i-wifi-off"/></svg> Works offline</li>
+        <li><svg class="icon"><use href="#i-shield"/></svg> No permissions</li>
+        <li><svg class="icon"><use href="#i-code"/></svg> GPL-3.0-or-later</li>
+      </ul>
+    </div>
+
+    <div class="hero__device">
+      <div class="phone" data-screen>
+        <div class="phone__notch" aria-hidden="true"></div>
+        <img class="phone__img" src="assets/screens/01-home.png" alt="Fixionary home screen with the search bar" width="540" height="1170" loading="eager">
+        <div class="phone__ph" aria-hidden="true"><svg class="icon icon--xl"><use href="#i-smartphone"/></svg><span>assets/screens/01-home.png</span></div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main id="main" tabindex="-1">
+
+<!-- ================= FEATURES ================= -->
+<section id="features" class="section">
+  <div class="section-title reveal"><h2>Features</h2></div>
+  <p class="section-sub reveal">Everything a dictionary should do, and nothing it shouldn't.</p>
+
+  <div class="grid features">
+    <article class="card reveal">
+      <div class="card__icon"><svg class="icon"><use href="#i-wifi-off"/></svg></div>
+      <h3>Fully offline</h3>
+      <p>The whole dictionary is bundled inside the app. Look up any word on a plane, on the metro or with data switched off.</p>
+    </article>
+    <article class="card reveal">
+      <div class="card__icon"><svg class="icon"><use href="#i-zap"/></svg></div>
+      <h3>Instant search</h3>
+      <p>Results appear as you type. The database is built for speed, so the list stays snappy even on modest phones.</p>
+    </article>
+    <article class="card reveal">
+      <div class="card__icon"><svg class="icon"><use href="#i-search"/></svg></div>
+      <h3>Typo-tolerant</h3>
+      <p>Misspelled something? Fixionary still finds the word and suggests the closest matches.</p>
+    </article>
+    <article class="card reveal">
+      <div class="card__icon"><svg class="icon"><use href="#i-book-open"/></svg></div>
+      <h3>Search by meaning</h3>
+      <p>Can't remember the word? Describe what it means and let the dictionary find it for you.</p>
+    </article>
+    <article class="card reveal">
+      <div class="card__icon"><svg class="icon"><use href="#i-layers"/></svg></div>
+      <h3>Meanings &amp; thesaurus</h3>
+      <p>Definitions by part of speech, plus synonyms and antonyms, all on one clean page.</p>
+    </article>
+    <article class="card reveal">
+      <div class="card__icon"><svg class="icon"><use href="#i-volume"/></svg></div>
+      <h3>Pronunciation</h3>
+      <p>IPA transcriptions and pronunciation help so you know how a word is said, not just what it means.</p>
+    </article>
+    <article class="card reveal">
+      <div class="card__icon"><svg class="icon"><use href="#i-globe"/></svg></div>
+      <h3>Origins &amp; word forms</h3>
+      <p>See where a word comes from, and find the base word behind plurals, tenses and other forms.</p>
+    </article>
+    <article class="card reveal">
+      <div class="card__icon"><svg class="icon"><use href="#i-heart"/></svg></div>
+      <h3>Favourites &amp; history</h3>
+      <p>Save the words you love and jump back to anything you looked up before.</p>
+    </article>
+    <article class="card reveal">
+      <div class="card__icon"><svg class="icon"><use href="#i-lock"/></svg></div>
+      <h3>Private by design</h3>
+      <p>No ads, no trackers, no accounts and no permissions. Your searches never leave your phone.</p>
+    </article>
+  </div>
+
+  <div class="section-title section-title--small reveal"><h2>Screenshots</h2></div>
+  <div class="shots reveal" role="list">
+    <figure class="shot" role="listitem" data-screen>
+      <div class="phone phone--sm">
+        <img class="phone__img" src="assets/screens/01-home.png" alt="Home screen" width="540" height="1170" loading="lazy">
+        <div class="phone__ph" aria-hidden="true"><svg class="icon icon--xl"><use href="#i-smartphone"/></svg><span>01-home.png</span></div>
+      </div>
+      <figcaption>Search-first home</figcaption>
+    </figure>
+    <figure class="shot" role="listitem" data-screen>
+      <div class="phone phone--sm">
+        <img class="phone__img" src="assets/screens/02-definition.png" alt="Word definition screen" width="540" height="1170" loading="lazy">
+        <div class="phone__ph" aria-hidden="true"><svg class="icon icon--xl"><use href="#i-smartphone"/></svg><span>02-definition.png</span></div>
+      </div>
+      <figcaption>Clear definitions</figcaption>
+    </figure>
+    <figure class="shot" role="listitem" data-screen>
+      <div class="phone phone--sm">
+        <img class="phone__img" src="assets/screens/03-search.png" alt="Search results with suggestions" width="540" height="1170" loading="lazy">
+        <div class="phone__ph" aria-hidden="true"><svg class="icon icon--xl"><use href="#i-smartphone"/></svg><span>03-search.png</span></div>
+      </div>
+      <figcaption>Typo-tolerant search</figcaption>
+    </figure>
+    <figure class="shot" role="listitem" data-screen>
+      <div class="phone phone--sm">
+        <img class="phone__img" src="assets/screens/04-favourites.png" alt="Favourites and history" width="540" height="1170" loading="lazy">
+        <div class="phone__ph" aria-hidden="true"><svg class="icon icon--xl"><use href="#i-smartphone"/></svg><span>04-favourites.png</span></div>
+      </div>
+      <figcaption>Favourites &amp; history</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- ================= DOWNLOAD ================= -->
+<section id="download" class="section">
+  <div class="section-title reveal"><h2>Download</h2></div>
+  <p class="section-sub reveal">Pick the source you trust. Every build is signed with the same key.</p>
+
+  <p id="release-line" class="release-line reveal" hidden></p>
+
+  <div class="grid downloads">
+
+    <article class="card dl reveal is-soon" data-source="fdroid">
+      <div class="dl__head">
+        <div class="card__icon"><svg class="icon"><use href="#i-package"/></svg></div>
+        <span class="pill pill--soon" data-pill>Coming soon</span>
+      </div>
+      <h3>F-Droid</h3>
+      <p>The free-software app store. Updates arrive automatically once Fixionary is listed.</p>
+      <a class="btn btn--block" data-link aria-disabled="true" tabindex="-1" href="#download">Not available yet</a>
+    </article>
+
+    <article class="card dl reveal is-soon" data-source="obtainium">
+      <div class="dl__head">
+        <div class="card__icon"><svg class="icon"><use href="#i-download"/></svg></div>
+        <span class="pill pill--soon" data-pill>Coming soon</span>
+      </div>
+      <h3>Obtainium</h3>
+      <p>Get updates straight from GitHub releases, with no store in between.</p>
+      <a class="btn btn--block" data-link aria-disabled="true" tabindex="-1" href="#download">Not available yet</a>
+      <button type="button" class="copy" data-copy="https://github.com/bips-git/fixionary" aria-label="Copy the repository URL for Obtainium"><svg class="icon"><use href="#i-copy"/></svg><span>Copy repo URL</span></button>
+    </article>
+
+    <article class="card dl reveal is-soon" data-source="accrescent">
+      <div class="dl__head">
+        <div class="card__icon"><svg class="icon"><use href="#i-shield"/></svg></div>
+        <span class="pill pill--soon" data-pill>Coming soon</span>
+      </div>
+      <h3>Accrescent</h3>
+      <p>A privacy-focused store with verified, signed updates.</p>
+      <a class="btn btn--block" data-link aria-disabled="true" tabindex="-1" href="#download">Not available yet</a>
+    </article>
+
+    <article class="card dl reveal is-soon" data-source="github">
+      <div class="dl__head">
+        <div class="card__icon"><svg class="icon"><use href="#i-github"/></svg></div>
+        <span class="pill pill--soon" data-pill>Coming soon</span>
+      </div>
+      <h3>GitHub Releases</h3>
+      <p>Every version with release notes, plus the full source code.</p>
+      <a class="btn btn--block" data-link aria-disabled="true" tabindex="-1" href="#download">Not available yet</a>
+    </article>
+
+    <article class="card dl dl--main reveal is-soon" data-source="direct">
+      <div class="dl__head">
+        <div class="card__icon"><svg class="icon"><use href="#i-smartphone"/></svg></div>
+        <span class="pill pill--soon" data-pill>Coming soon</span>
+      </div>
+      <h3>Direct download</h3>
+      <p>The latest signed APK, ready to install. You may need to allow installs from your browser.</p>
+      <a class="btn btn--primary btn--block" data-link aria-disabled="true" tabindex="-1" href="#download"><svg class="icon"><use href="#i-download"/></svg> <span data-label>APK not available yet</span></a>
+      <dl class="meta">
+        <div><dt>Version</dt><dd data-meta="version">—</dd></div>
+        <div><dt>Size</dt><dd data-meta="size">—</dd></div>
+        <div class="meta__wide"><dt>SHA-256</dt><dd data-meta="sha" class="mono">—</dd></div>
+      </dl>
+    </article>
+
+  </div>
+
+  <aside class="note reveal">
+    <svg class="icon"><use href="#i-lock"/></svg>
+    <p>Requires Android. Fixionary is free software released under the GPL-3.0-or-later licence, and the source code is on <a href="https://github.com/bips-git/fixionary" target="_blank" rel="noopener">GitHub</a>.</p>
+  </aside>
+</section>
+
+</main>
+
+<footer class="footer">
+  <div class="footer__links">
+    <a href="https://github.com/bips-git/fixionary" target="_blank" rel="noopener"><svg class="icon"><use href="#i-github"/></svg> GitHub</a>
+    <a href="https://github.com/bips-git/fixionary/releases" target="_blank" rel="noopener"><svg class="icon"><use href="#i-package"/></svg> Releases</a>
+    <a href="https://github.com/bips-git/fixionary/issues" target="_blank" rel="noopener"><svg class="icon"><use href="#i-external"/></svg> Report an issue</a>
+  </div>
+  <p>Copyright © 2026 Bipul Das. Released under the GPL-3.0-or-later licence.</p>
+  <p class="weak">Made with plain HTML, CSS and JavaScript. No trackers, no cookies.</p>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>
