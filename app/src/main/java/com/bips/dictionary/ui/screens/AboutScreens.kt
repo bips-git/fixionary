@@ -15,7 +15,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bips.dictionary.R
@@ -43,35 +48,65 @@ private val softwareNotices = listOf(
 private val allNotices = dataNotices + softwareNotices
 
 @Composable
-fun AboutScreen(onBack: () -> Unit, onOpenNotice: (String) -> Unit) {
+fun AboutScreen(onBack: () -> Unit, onOpenFeatures: () -> Unit, onOpenNotice: (String) -> Unit) {
     val context = LocalContext.current
     val version = remember {
         runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }.getOrNull() ?: ""
     }
     DictScreen(title = "About", onBack = onBack) {
         Text(
-            "Fixionary $version",
-            style = MaterialTheme.typography.titleLarge,
+            buildAnnotatedString {
+                append("Fixionary")
+                withStyle(
+                    SpanStyle(
+                        fontSize = 14.sp, fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    ),
+                ) { append("  $version") }
+            },
+            style = MaterialTheme.typography.headlineSmall,
             modifier = Modifier.padding(start = 16.dp, top = 8.dp),
         )
         Text(
+            buildAnnotatedString {
+                withStyle(SpanStyle(fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)) {
+                    append("A Fixed Dictionary.")
+                }
+                append(" ")
+                withStyle(SpanStyle(fontStyle = FontStyle.Italic, fontWeight = FontWeight.Normal)) {
+                    append("Fixes what dictionary apps got wrong.")
+                }
+            },
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 6.dp),
+        )
+        Text(
             "An English dictionary that works completely offline.",
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp),
+            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 6.dp),
         )
 
         Text(
             "Copyright © 2026 Bipul Das",
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp),
+            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 18.dp),
         )
         Text(
-            "Free software: you can redistribute it and/or modify it under the terms of the GNU General Public " +
-                "License, version 3 or (at your option) any later version. It comes with ABSOLUTELY NO WARRANTY.",
-            style = MaterialTheme.typography.bodySmall,
+            buildAnnotatedString {
+                append("Free software: you can redistribute it and/or modify it under the terms of the ")
+                withStyle(SpanStyle(fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)) {
+                    append("GNU General Public License")
+                }
+                append(", version 3 or (at your option) any later version. It comes with ")
+                withStyle(SpanStyle(fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)) {
+                    append("ABSOLUTELY NO WARRANTY")
+                }
+                append(".")
+            },
+            style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 21.sp),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp),
+            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 6.dp),
         )
 
         SectionHeader("Privacy")
@@ -81,6 +116,7 @@ fun AboutScreen(onBack: () -> Unit, onOpenNotice: (String) -> Unit) {
                 subtitle = "No internet permission, no ads, no analytics, no accounts. Favourites and history stay on this device.",
                 icon = Icons.Outlined.Lock,
                 accent = Accents.Green,
+                onClick = onOpenFeatures,
             )
         }
 
@@ -105,7 +141,7 @@ fun AboutScreen(onBack: () -> Unit, onOpenNotice: (String) -> Unit) {
         Text(
             "Definitions are provided as published by their sources and come with no warranty. " +
                 "Pronunciation uses your phone's own text-to-speech engine.",
-            style = MaterialTheme.typography.bodySmall,
+            style = MaterialTheme.typography.bodyMedium.copy(fontStyle = FontStyle.Italic),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(16.dp),
         )

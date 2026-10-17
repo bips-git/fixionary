@@ -36,6 +36,7 @@ import com.bips.dictionary.data.WordLoad
 import com.bips.dictionary.speech.rememberSpeaker
 import com.bips.dictionary.ui.screens.AboutScreen
 import com.bips.dictionary.ui.screens.FailedScreen
+import com.bips.dictionary.ui.screens.FeaturesScreen
 import com.bips.dictionary.ui.screens.FavouritesScreen
 import com.bips.dictionary.ui.screens.HistoryScreen
 import com.bips.dictionary.ui.screens.HomeScreen
@@ -120,7 +121,14 @@ private fun DictionaryNav(
             )
         }
         composable("about") {
-            AboutScreen(onBack = { nav.popBackStack() }, onOpenNotice = { nav.navigate("notice/$it") })
+            AboutScreen(
+                onBack = { nav.popBackStack() },
+                onOpenFeatures = { nav.navigate("features") },
+                onOpenNotice = { nav.navigate("notice/$it") },
+            )
+        }
+        composable("features") {
+            FeaturesScreen(onBack = { nav.popBackStack() })
         }
         composable(
             route = "notice/{id}",
