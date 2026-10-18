@@ -7,7 +7,7 @@
 The input database is never modified. WordNet stays the main source; Wiktionary only fills gaps:
   * common words WordNet lacks (the, of, and, ...)  -> new headwords, ranked by word frequency
   * IPA (US / UK) for words that have none          -> pronunciations
-  * origins (etymology)                             -> etymology (cleaned, capped length)
+  * origins (etymology)                             -> etymology (structured lineage + cognates, see etym.py)
   * inflected forms (ran, mice, better ...)         -> new table forms(form, lemma_id, note)
 New synsets carry src = 1 so the app can credit Wiktionary. Prints a size report; check it before copying
 the result over dict-data/build/dictionary.db and rebuilding.
@@ -17,6 +17,7 @@ from collections import defaultdict
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from build_db_v2 import SCHEMA, INDEXES, MULTIWORD_PENALTY, fold, log  # noqa: E402
+from etym import structure_etym  # noqa: E402
 
 PLAIN = re.compile(r"^[a-z]+$")
 FORM_OK = re.compile(r"^[a-z][a-z']*$")
@@ -56,15 +57,6 @@ def pick_ipa(items):
     return out
 
 
-def clean_etym(text, cap):
-    text = " ".join(text.split())
-    if len(text) <= cap:
-        return text
-    cut = text[:cap]
-    k = cut.rfind(". ")
-    return cut[:k + 1] if k > cap // 2 else cut.rstrip() + "…"
-
-
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--db", required=True)
@@ -72,7 +64,7 @@ def main():
     ap.add_argument("--out", required=True)
     ap.add_argument("--min-zipf", type=float, default=3.0, help="add Wiktionary-only words at least this common")
     ap.add_argument("--etym-max-rank", type=int, default=120000)
-    ap.add_argument("--etym-cap", type=int, default=600, help="max characters of origin text per word")
+    ap.add_argument("--etym-cap", type=int, default=900, help="max characters of structured origin text per word")
     ap.add_argument("--forms-max-rank", type=int, default=100000)
     a = ap.parse_args()
     try:
@@ -191,7 +183,9 @@ def main():
             for ipa, region in pick_ipa(ipa_items):
                 pron_rows.append((wid, ipa, region))
         if not had_ety and etym and wid <= a.etym_max_rank:
-            ety_rows.append((wid, clean_etym(etym, a.etym_cap)))
+            structured = structure_etym(etym, cap=a.etym_cap)
+            if structured:
+                ety_rows.append((wid, structured))
         for form, tags in forms:
             if set(tags) & BAD_FORM_TAGS:
                 continue
