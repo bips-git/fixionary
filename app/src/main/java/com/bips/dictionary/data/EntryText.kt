@@ -24,7 +24,7 @@ fun wordListText(words: List<String>): String = words.joinToString(", ")
  */
 fun entryText(e: WordEntry): String = buildList {
     e.senses.groupBy { it.pos }.forEach { (_, senses) -> add(senseGroupText(senses)) }
-    e.etymology?.let { add(originPlainText(it)) }
+    e.etymology?.let { add(it) }
     listOf(e.synonyms, e.antonyms, e.broader, e.narrower, e.related)
         .filter { it.isNotEmpty() }
         .forEach { add(wordListText(it)) }
