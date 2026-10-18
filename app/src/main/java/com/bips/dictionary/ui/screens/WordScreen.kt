@@ -49,11 +49,13 @@ import androidx.compose.ui.unit.dp
 import com.bips.dictionary.data.WordEntry
 import com.bips.dictionary.data.WordLoad
 import com.bips.dictionary.data.entryText
+import com.bips.dictionary.data.originPlainText
 import com.bips.dictionary.data.senseGroupText
 import com.bips.dictionary.data.wordListText
 import com.bips.dictionary.ui.components.Copier
 import com.bips.dictionary.ui.components.rememberCopier
 import com.bips.dictionary.ui.components.DictGroup
+import com.bips.dictionary.ui.components.EtymologyCard
 import com.bips.dictionary.ui.components.DictScreen
 import com.bips.dictionary.ui.components.SectionHeader
 import com.bips.dictionary.ui.components.WordChips
@@ -207,15 +209,9 @@ private fun WordContent(
 
         entry.etymology?.let { origin ->
             item(key = "hdr-origin") {
-                SectionHeader("Origin", onCopy = { copier.copy("origin", origin) })
+                SectionHeader("Origin", onCopy = { copier.copy("origin", originPlainText(origin)) })
             }
-            item(key = "origin") {
-                Surface(
-                    shape = groupedShape(0, 1),
-                    color = MaterialTheme.colorScheme.surfaceContainer,
-                    modifier = Modifier.fillMaxWidth(),
-                ) { Text(origin, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(16.dp)) }
-            }
+            item(key = "origin") { EtymologyCard(origin) }
         }
 
         chipSection("Synonyms", entry.synonyms, Accents.Green, copier, onOpenWord)
