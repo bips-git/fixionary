@@ -11,8 +11,8 @@ android {
         applicationId = "io.github.bips_git.fixionary"
         minSdk = 26
         targetSdk = 37
-        versionCode = 10000
-        versionName = "1.0.0"
+        versionCode = 10002
+        versionName = "1.0.2"
     }
 
     buildTypes {
