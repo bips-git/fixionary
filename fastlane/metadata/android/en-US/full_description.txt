@@ -1,0 +1,10 @@
+Fixionary is a fast, fully offline English dictionary and thesaurus. Nothing is downloaded, nothing is tracked, and the app asks for no permissions.
+
+Features:
+- Definitions, parts of speech, synonyms and antonyms
+- Pronunciation (IPA) and word origins shown as a timeline
+- Typo-tolerant search, search by meaning, and search by word form
+- Favourites, history and word of the day
+- Material 3 design with its own indigo-violet palette
+
+Dictionary data comes from Open English WordNet (CC BY 4.0) and Wiktionary (CC BY-SA 4.0). The app is free software under the GPL-3.0-or-later.
