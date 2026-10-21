@@ -20,6 +20,7 @@ android {
             // Left unsigned on purpose: the release workflow signs it with the real key in a separate job.
             isMinifyEnabled = true
             isShrinkResources = true
+            vcsInfo.include = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
         }
     }

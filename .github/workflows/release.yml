@@ -106,7 +106,9 @@ jobs:
           EXPECTED: ${{ vars.CERT_SHA256 }}
         run: |
           set -euo pipefail
-          APKSIGNER="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)/apksigner"
+          BT="$ANDROID_HOME/build-tools/34.0.0"
+          [ -x "$BT/apksigner" ] || "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "build-tools;34.0.0"
+          APKSIGNER="$BT/apksigner"
           KS="$RUNNER_TEMP/release.p12"
           OUT="fixionary-v${VERSION}.apk"
           trap 'rm -f "$KS"' EXIT
