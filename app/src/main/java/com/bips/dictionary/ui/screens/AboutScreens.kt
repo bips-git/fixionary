@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -28,6 +27,8 @@ import androidx.compose.material.icons.outlined.Gavel
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.TextFields
 import androidx.compose.material3.Icon
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -54,6 +55,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bips.dictionary.R
 import com.bips.dictionary.ui.components.AccentTile
+import com.bips.dictionary.ui.components.DictGroup
 import com.bips.dictionary.ui.components.DictScreen
 import com.bips.dictionary.ui.components.SectionHeader
 import com.bips.dictionary.ui.components.accentGlyph
@@ -104,46 +106,45 @@ fun AboutScreen(onBack: () -> Unit, onOpenFeatures: () -> Unit, onOpenNotice: (S
     DictScreen(title = "About", onBack = onBack) {
         Hero(version, onOpenFeatures)
 
-        Row(
-            Modifier.fillMaxWidth().padding(top = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            LinkChip("Source code ↗", Icons.Outlined.Code, Accents.Blue) { openUrl(REPO_URL) }
-            LinkChip("Report an issue ↗", Icons.Outlined.BugReport, Accents.Rose) { openUrl("$REPO_URL/issues") }
+        SectionHeader("Project")
+        Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            LinkChip("Source code", Icons.Outlined.Code, Accents.Blue) { openUrl(REPO_URL) }
+            LinkChip("Issue tracker", Icons.Outlined.BugReport, Accents.Rose) { openUrl("$REPO_URL/issues") }
         }
 
         SectionHeader("Privacy")
-        NoticeCard(
-            title = "Nothing leaves your phone",
-            subtitle = "No internet permission, no ads, no analytics, no accounts. Favourites and history stay on this device.",
-            chip = "Always on",
-            accent = Accents.Green,
-            icon = Icons.Outlined.Lock,
-            onClick = onOpenFeatures,
-        )
+        DictGroup(
+            listOf(
+                AboutItem(
+                    "Nothing leaves your phone",
+                    "No internet permission, no ads, no analytics, no accounts.",
+                    "Always on", Accents.Green, Icons.Outlined.Lock, onOpenFeatures,
+                ),
+            ),
+        ) { AboutRow(it) }
 
         SectionHeader("Dictionary data")
-        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            dataNotices.forEach { n ->
-                NoticeCard(n.title, n.subtitle, n.licence, n.accent, Icons.AutoMirrored.Outlined.MenuBook) { onOpenNotice(n.id) }
-            }
-        }
+        DictGroup(
+            dataNotices.map { n ->
+                AboutItem(n.title, n.subtitle, n.licence, n.accent, Icons.AutoMirrored.Outlined.MenuBook) { onOpenNotice(n.id) }
+            },
+        ) { AboutRow(it) }
 
         SectionHeader("Licences")
-        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            softwareNotices.forEach { n ->
+        DictGroup(
+            softwareNotices.map { n ->
                 val icon = if (n.id == "apache" || n.id == "gpl") Icons.Outlined.Gavel else Icons.Outlined.TextFields
-                NoticeCard(n.title, n.subtitle, n.licence, n.accent, icon) { onOpenNotice(n.id) }
-            }
-        }
+                AboutItem(n.title, n.subtitle, n.licence, n.accent, icon) { onOpenNotice(n.id) }
+            },
+        ) { AboutRow(it) }
 
         CopyrightCard()
         Text(
             "Definitions are provided as published by their sources and come with no warranty. " +
                 "Pronunciation uses your phone's own text-to-speech engine.",
-            style = MaterialTheme.typography.bodyMedium.copy(fontStyle = FontStyle.Italic),
+            style = MaterialTheme.typography.bodySmall.copy(fontStyle = FontStyle.Italic),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
         )
     }
 }
@@ -151,7 +152,7 @@ fun AboutScreen(onBack: () -> Unit, onOpenFeatures: () -> Unit, onOpenNotice: (S
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun Hero(version: String, onOpenFeatures: () -> Unit) {
-    val shape = RoundedCornerShape(28.dp)
+    val shape = RoundedCornerShape(26.dp)
     Box(
         Modifier
             .fillMaxWidth()
@@ -165,27 +166,27 @@ private fun Hero(version: String, onOpenFeatures: () -> Unit) {
                 drawCircle(Brush.radialGradient(listOf(NeonViolet.copy(alpha = 0.40f), Color.Transparent), center = b, radius = size.width * 0.50f), radius = size.width * 0.50f, center = b)
             }
             .border(1.dp, Color.White.copy(alpha = 0.20f), shape)
-            .padding(20.dp),
+            .padding(18.dp),
     ) {
         Column {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
-                    Modifier.size(60.dp).clip(RoundedCornerShape(20.dp))
+                    Modifier.size(52.dp).clip(RoundedCornerShape(18.dp))
                         .background(Color.White.copy(alpha = 0.14f))
-                        .border(1.dp, Color.White.copy(alpha = 0.30f), RoundedCornerShape(20.dp)),
+                        .border(1.dp, Color.White.copy(alpha = 0.30f), RoundedCornerShape(18.dp)),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(Icons.AutoMirrored.Outlined.MenuBook, contentDescription = null, tint = Neon, modifier = Modifier.size(32.dp))
+                    Icon(Icons.AutoMirrored.Outlined.MenuBook, contentDescription = null, tint = Neon, modifier = Modifier.size(28.dp))
                 }
-                Column(Modifier.padding(start = 16.dp)) {
-                    Text("Fixionary", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = Color.White)
+                Column(Modifier.padding(start = 14.dp)) {
+                    Text("Fixionary", style = MaterialTheme.typography.headlineSmall, color = Color.White)
                     if (version.isNotEmpty()) {
                         Box(
-                            Modifier.padding(top = 4.dp).clip(CircleShape)
+                            Modifier.padding(top = 3.dp).clip(CircleShape)
                                 .background(Color.White.copy(alpha = 0.14f))
-                                .padding(horizontal = 10.dp, vertical = 2.dp),
+                                .padding(horizontal = 9.dp, vertical = 1.dp),
                         ) {
-                            Text("v$version", style = MaterialTheme.typography.labelMedium.copy(fontFamily = FontFamily.Monospace), color = Neon)
+                            Text("v$version", style = MaterialTheme.typography.labelSmall.copy(fontFamily = FontFamily.Monospace), color = Neon)
                         }
                     }
                 }
@@ -198,21 +199,21 @@ private fun Hero(version: String, onOpenFeatures: () -> Unit) {
                         append("Fixes what dictionary apps got wrong.")
                     }
                 },
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(top = 18.dp),
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.padding(top = 16.dp),
             )
             Text(
                 "An English dictionary that works completely offline.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color.White.copy(alpha = 0.72f),
-                modifier = Modifier.padding(top = 4.dp),
+                style = MaterialTheme.typography.bodySmall,
+                color = Color.White.copy(alpha = 0.70f),
+                modifier = Modifier.padding(top = 3.dp),
             )
             FlowRow(
-                Modifier.padding(top = 18.dp),
+                Modifier.padding(top = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                listOf("Offline", "Open source", "No ads", "No tracking").forEach { GlassChip(it, onOpenFeatures) }
+                listOf("Offline", "No ads", "Open source").forEach { GlassChip(it, onOpenFeatures) }
             }
         }
     }
@@ -226,66 +227,69 @@ private fun GlassChip(text: String, onClick: () -> Unit) {
             .background(Color.White.copy(alpha = 0.12f))
             .border(1.dp, Color.White.copy(alpha = 0.26f), CircleShape)
             .clickable(role = Role.Button, onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 7.dp),
+            .padding(horizontal = 11.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(Modifier.size(7.dp).clip(CircleShape).background(Neon))
-        Spacer(Modifier.width(8.dp))
-        Text(text, style = MaterialTheme.typography.labelLarge, color = Color.White)
+        Box(Modifier.size(6.dp).clip(CircleShape).background(Neon))
+        Spacer(Modifier.width(7.dp))
+        Text(text, style = MaterialTheme.typography.labelMedium, color = Color.White)
     }
 }
 
+/** A tinted pill that opens a web page in the user's browser. */
 @Composable
 private fun LinkChip(label: String, icon: ImageVector, accent: Color, onClick: () -> Unit) {
     Row(
         Modifier.clip(CircleShape)
             .background(accentWash(accent))
             .clickable(onClickLabel = "Open in browser", role = Role.Button, onClick = onClick)
-            .padding(horizontal = 14.dp, vertical = 10.dp),
+            .padding(horizontal = 14.dp, vertical = 9.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(icon, contentDescription = null, tint = accentGlyph(accent), modifier = Modifier.size(18.dp))
-        Spacer(Modifier.width(8.dp))
+        Icon(icon, contentDescription = null, tint = accentGlyph(accent), modifier = Modifier.size(16.dp))
+        Spacer(Modifier.width(7.dp))
         Text(label, style = MaterialTheme.typography.labelLarge, color = accentGlyph(accent))
+        Spacer(Modifier.width(5.dp))
+        Text("↗", style = MaterialTheme.typography.labelMedium, color = accentGlyph(accent))
     }
 }
 
-/** A tappable card: coloured icon tile, title and subtitle, a licence chip, and a chevron. */
+private class AboutItem(
+    val title: String,
+    val subtitle: String,
+    val chip: String,
+    val accent: Color,
+    val icon: ImageVector,
+    val onClick: () -> Unit,
+)
+
+/** Same look as the rows in Settings: tile, title, one muted line, then a small coloured licence chip. */
 @Composable
-private fun NoticeCard(
-    title: String,
-    subtitle: String,
-    chip: String,
-    accent: Color,
-    icon: ImageVector,
-    onClick: () -> Unit,
-) {
-    Surface(
-        onClick = onClick,
-        shape = RoundedCornerShape(22.dp),
-        color = MaterialTheme.colorScheme.surfaceContainer,
-        border = BorderStroke(1.dp, accent.copy(alpha = 0.35f)),
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-            AccentTile(icon, accent)
-            Column(Modifier.weight(1f).padding(horizontal = 14.dp)) {
-                Text(title, style = MaterialTheme.typography.titleMedium)
-                Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+private fun AboutRow(item: AboutItem) {
+    ListItem(
+        modifier = Modifier.clickable(onClick = item.onClick),
+        leadingContent = { AccentTile(item.icon, item.accent) },
+        headlineContent = { Text(item.title) },
+        supportingContent = {
+            Column {
+                Text(item.subtitle)
                 Box(
-                    Modifier.padding(top = 8.dp).clip(CircleShape).background(accentWash(accent))
-                        .padding(horizontal = 10.dp, vertical = 3.dp),
+                    Modifier.padding(top = 6.dp).clip(CircleShape).background(accentWash(item.accent))
+                        .padding(horizontal = 9.dp, vertical = 2.dp),
                 ) {
                     Text(
-                        chip,
+                        item.chip,
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                        color = accentGlyph(accent),
+                        color = accentGlyph(item.accent),
                     )
                 }
             }
+        },
+        trailingContent = {
             Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-    }
+        },
+        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+    )
 }
 
 @Composable
@@ -297,7 +301,7 @@ private fun CopyrightCard() {
         modifier = Modifier.fillMaxWidth().padding(top = 20.dp),
     ) {
         Column(Modifier.padding(16.dp)) {
-            Text("Copyright © 2026 Bipul Das", style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold))
+            Text("Copyright © 2026 Bipul Das", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold))
             Text(
                 buildAnnotatedString {
                     append("Free software: you can redistribute it and/or modify it under the terms of the ")
@@ -310,7 +314,7 @@ private fun CopyrightCard() {
                     }
                     append(".")
                 },
-                style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 21.sp),
+                style = MaterialTheme.typography.bodySmall.copy(lineHeight = 19.sp),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 6.dp),
             )
